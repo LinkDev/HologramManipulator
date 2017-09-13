@@ -46,3 +46,5 @@ WSATestCertificate.pfx.meta
 # Project Related .gitignore#
 # ===================================== #
 Assets/HoloToolKit
+Assets/HoloToolKit.meta
+
