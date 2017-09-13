@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: 338ddae002fc3af4086cd4f24418b0f3
+timeCreated: 1485780371
+licenseType: Free
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - ScaleControllerPrefab: {fileID: 1768989509447430, guid: 5ca72b9e8211f2f47971e0139da19440,
+      type: 2}
+  - RotateControllerPrefab: {fileID: 1768989509447430, guid: 5ca72b9e8211f2f47971e0139da19440,
+      type: 2}
+  - MenuPrefab: {fileID: 1768989509447430, guid: 1ef3f96a0a581434687a34d0d8d97675,
+      type: 2}
+  - BoundaryBoxLine: {fileID: 1346323259724296, guid: 068f05e8f76b7ae47886ddafbd2ec8e8,
+      type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
