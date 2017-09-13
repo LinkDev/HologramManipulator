@@ -440,7 +440,7 @@ namespace LinkDev.HologramManipulator
 
         /// <summary>
         /// Change the location of the pivot of the hologram, useful for scaling and rotating
-        /// because scaling requires scaling around a speciifc point (the opposite edge of the controller being used)
+        /// because scaling requires scaling around a specifc point (the opposite edge of the controller being used)
         /// and rotating requires rotating around the center of the object
         /// </summary>
         /// <param name="newPosition"></param>
@@ -500,7 +500,6 @@ namespace LinkDev.HologramManipulator
                             if (i % 4 < 2)
                             {
                                 m_BoundaryLines[j].DrawTube(m_BoundaryBox.ControllerPointsPosition[i], m_BoundaryBox.ControllerPointsPosition[i + 2], m_BoundaryBox.ScaleFactor * ManipulationManager.Instance.BoundaryBoxLineWidthFactor);
-                                //DrawTube(m_BoundaryLines[j], m_BoundaryBox.ControllerPointsPosition[i], m_BoundaryBox.ControllerPointsPosition[i + 2], m_BoundaryBox.ScaleFactor * BoundaryBoxLineWidthFactor);
                                 //These are the vertical tube, so we draw the Y rotation controller in there center
                                 m_RotateControllerInstances[y + 4].transform.position = m_BoundaryLines[j].transform.position;
                                 m_RotateControllerInstances[y + 4].transform.rotation = m_BoundaryBox.EdgePointsQuaternion[i];
@@ -513,7 +512,6 @@ namespace LinkDev.HologramManipulator
                             if (i < 4)
                             {
                                 m_BoundaryLines[j].DrawTube(m_BoundaryBox.ControllerPointsPosition[i], m_BoundaryBox.ControllerPointsPosition[i + 4], m_BoundaryBox.ScaleFactor * ManipulationManager.Instance.BoundaryBoxLineWidthFactor);
-                                //DrawTube(m_BoundaryLines[j], m_BoundaryBox.ControllerPointsPosition[i], m_BoundaryBox.ControllerPointsPosition[i + 4], m_BoundaryBox.ScaleFactor * BoundaryBoxLineWidthFactor);
                                 m_RotateControllerInstances[z + 8].transform.position = m_BoundaryLines[j].transform.position;
                                 m_RotateControllerInstances[z + 8].transform.rotation = m_BoundaryBox.EdgePointsQuaternion[i];
                                 m_RotateControllerInstances[z + 8].transform.localScale = Vector3.one * m_BoundaryBox.EdgePointsScale;
@@ -562,16 +560,9 @@ namespace LinkDev.HologramManipulator
         /// <param name="height">The height of the lines used to draw the projection</param>
         private void DrawBaseProjection(Vector3[] p, float thickness, float height)
         {
-            //thickness = 0;
-            //Vector3 xDim = new Vector3(thickness, height, (p[0] - p[1]).magnitude + thickness);
-            //Vector3 yDim = new Vector3((p[1] - p[2]).magnitude - thickness, height, thickness);
-
             for (int i = 0; i < 4; i++)
             {
                 m_BoundaryBase[i].DrawTube(p[i], p[(i + 1) % 4], thickness);
-                //m_BoundaryBase[i].transform.localPosition = (p[i] + p[(i + 1) % 4]) / 2;
-                //m_BoundaryBase[i].transform.localRotation = Quaternion.LookRotation(Vector3.forward);
-                //m_BoundaryBase[i].transform.localScale = i % 2 == 0 ? xDim : yDim;
             }
         }
         #endregion
