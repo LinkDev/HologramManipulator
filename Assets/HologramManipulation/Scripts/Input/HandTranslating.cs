@@ -40,7 +40,7 @@ namespace LinkDev.HologramManipulator.InputModule
         
         /// <summary>
         /// Scale by which hand movement in z is multipled to move the dragged object, determined 
-        /// from <see cref="ManipulationManager.ScaleFactor"/> 
+        /// from <see cref="ManipulatorSettings.ScaleFactor"/> 
         /// </summary>
         public float DistanceScale = 2f;
 
@@ -80,7 +80,10 @@ namespace LinkDev.HologramManipulator.InputModule
         private uint currentInputSourceId;
 
         #region Snapping Variables
-        private HologramController m_BoundaryController;
+        private SnappingTarget m_SnappingTarget = SnappingTarget.Off;
+        private SnappingMode m_SnappingMode = SnappingMode.Face;
+        private float m_SnappingDistance;
+        private HologramManipulator m_BoundaryController;
         private int? m_PeerIndex;
         private List<Cuboid> m_NormalPeers;
         private List<Cuboid> m_SpatialPeers;
@@ -103,15 +106,17 @@ namespace LinkDev.HologramManipulator.InputModule
         }
         #endregion
 
-        public void Init(Action startedDragging, Action stoppedDragging, float distanceScale, RotationModeEnum rotationMode, bool isDraggingEnabled)
+        public void Init(Action startedDragging, Action stoppedDragging, RotationModeEnum rotationMode, bool isDraggingEnabled, HologramManipulator hologram, ManipulatorSettings manipulationSettings)
         {
             StartedDragging += startedDragging;
             StoppedDragging += stoppedDragging;
             RotationMode = rotationMode;
             IsDraggingEnabled = isDraggingEnabled;
-            DistanceScale = distanceScale;
-            
-            m_BoundaryController = GetComponent<HologramController>();
+            DistanceScale = manipulationSettings.TranslateFactor;
+            m_SnappingDistance = manipulationSettings.SnappingDistance;
+            m_SnappingMode = manipulationSettings.SnappingMode;
+            m_SnappingTarget = manipulationSettings.SnappingTarget;
+            m_BoundaryController = GetComponent<HologramManipulator>();
         }
 
         private void Start()
@@ -305,14 +310,14 @@ namespace LinkDev.HologramManipulator.InputModule
         #region Snapping Functions
         private void InitSnapping ()
         {
-            if (m_BoundaryController != null && ManipulationManager.Instance.CurrentActiveControllers.Contains(m_BoundaryController))
+            if (m_BoundaryController != null && HologramManipulator.CurrentActiveHolograms.Contains(m_BoundaryController))
             {
-                List<HologramController> peers = null;
+                List<HologramManipulator> peers = null;
                 List<SurfacePlane> surfaces = null;
 
                 m_NormalPeers = null;
                 m_SpatialPeers = null;
-                switch (ManipulationManager.Instance.SnappingTarget)
+                switch (m_SnappingTarget)
                 {
                     case SnappingTarget.Off:
                         break;
@@ -321,11 +326,11 @@ namespace LinkDev.HologramManipulator.InputModule
                         surfaces.RemoveAll(surface => surface.PlaneType == PlaneTypes.Unknown);
                         break;
                     case SnappingTarget.HolographicOnly:
-                        peers = ManipulationManager.Instance.CurrentActiveControllers.FindAll(obj => obj.HologramType == HologramType._3D);
+                        peers = HologramManipulator.CurrentActiveHolograms.FindAll(obj => obj.HologramType == HologramType._3D);
                         peers.Remove(m_BoundaryController);
                         break;
                     case SnappingTarget.SpatialAndHolographic:
-                        peers = ManipulationManager.Instance.CurrentActiveControllers.FindAll(obj => obj.HologramType == HologramType._3D); ;
+                        peers = HologramManipulator.CurrentActiveHolograms.FindAll(obj => obj.HologramType == HologramType._3D); ;
                         peers.Remove(m_BoundaryController);
 
                         surfaces = GameObject.FindObjectsOfType<HoloToolkit.Unity.SpatialMapping.SurfacePlane>().ToList();
@@ -349,7 +354,7 @@ namespace LinkDev.HologramManipulator.InputModule
         private void UpdateSnapping(bool DraggingEnded = false)
         {
             Vector3 snappingDisplacement = Vector3.zero;
-            switch (ManipulationManager.Instance.SnappingTarget)
+            switch (m_SnappingTarget)
             {
                 case SnappingTarget.Off:
                     return;
@@ -391,7 +396,7 @@ namespace LinkDev.HologramManipulator.InputModule
             {
                 var thisCuboid = new Cuboid(m_BoundaryController.GetBoundaryEdges(), m_BoundaryController, m_BoundaryController.OriginalPivot());
 
-                switch (ManipulationManager.Instance.SnappingMode)
+                switch (m_SnappingMode)
                 {
                     case SnappingMode.Pivot:
                         //Check if there is pivot snapping
@@ -429,7 +434,7 @@ namespace LinkDev.HologramManipulator.InputModule
             else
                 minDistance = Vector3.Distance(thisCuboid.Pivot, otherCuboids[m_PeerIndex.Value].Pivot);
 
-            if (minDistance <= ManipulationManager.Instance.SnappingDistance)
+            if (minDistance <= m_SnappingDistance)
             {
                 Displacement = otherCuboids[m_PeerIndex.Value].Pivot - thisCuboid.Pivot;
                 isSnapping = true;
@@ -460,9 +465,9 @@ namespace LinkDev.HologramManipulator.InputModule
 
             var thisFace = thisCuboid.Faces[thisFaceIndex.Value];
             var thatFace = thatAdjacentFace;
-            if (Face.CheckSnapping(thisFace, thatFace, ManipulationManager.Instance.SnappingDistance))
+            if (Face.CheckSnapping(thisFace, thatFace, m_SnappingDistance))
             {
-                if (Vector3.Distance(thisFace.ProjectedPivot, thatFace.ProjectedPivot) < ManipulationManager.Instance.SnappingDistance)
+                if (Vector3.Distance(thisFace.ProjectedPivot, thatFace.ProjectedPivot) < m_SnappingDistance)
                     Displacement = thatFace.ProjectedPivot - thisFace.ProjectedPivot;
                 else
                     Displacement = thatFace.GetProjectionVector(thisFace);
@@ -488,7 +493,7 @@ namespace LinkDev.HologramManipulator.InputModule
             float currentDistance, minDistance = float.MaxValue; int currentThisIndex, currentThatIndex;
             for (int i = 0; i < otherCuboids.Count; i++)
             {
-                currentDistance = Cuboid.GetClosedFaces(thisCuboid, otherCuboids[i], ManipulationManager.Instance.SnappingDistance, out currentThisIndex, out currentThatIndex);
+                currentDistance = Cuboid.GetClosedFaces(thisCuboid, otherCuboids[i], m_SnappingDistance, out currentThisIndex, out currentThatIndex);
                 if (currentDistance >= 0 && currentDistance < minDistance)
                 {
                     minDistance = currentDistance;

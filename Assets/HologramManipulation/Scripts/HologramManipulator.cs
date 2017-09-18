@@ -13,15 +13,14 @@ namespace LinkDev.HologramManipulator
     /// its transform, recommended to put this script on a game object that wraps the actual hologram
     /// because it change the position to certain key location of hologram (its center/edges) to be
     /// able to scale around edges or rotate around the center point
-    /// Dependant on <see cref="ManipulationManager"/> existing on the scene<Ma>
+    /// Dependant on <see cref="ManipulatorSettings"/> existing on the scene<Ma>
     /// </summary>
-    public class HologramController : MonoBehaviour, IFocusable, IInputClickHandler, IHighlightable
+    public class HologramManipulator : MonoBehaviour, IFocusable, IInputClickHandler, IHighlightable
     {
+        public static List<HologramManipulator> CurrentActiveHolograms = new List<HologramManipulator>();
+        private static HologramManipulator m_CurrentActiveHologram;
+
         public HologramType HologramType;
-        [Tooltip("Toggles the usage of controller menu on a hologram by hologram basis")]
-        public bool EnableControllerMenu = true;
-        [Tooltip("Toggles the registeration of a hologram in a list that tracks all of them")]
-        public bool RegisterInHologramsList = true;
 
 
         private float m_MinScaleFactor;
@@ -44,13 +43,12 @@ namespace LinkDev.HologramManipulator
         private BoundaryBox m_BoundaryBox;
         private List<IEnumerable<int>> m_CubeFaces = new List<IEnumerable<int>>();
 
+        private ManipulatorSettings m_ManipulationSettings;
         /// <summary>
         /// Parent of all controllers of the hologram to contain all of them in a tidier way
         /// </summary>
         private GameObject m_ManipulatorsContainer;
         
-
-        private Vector3? m_ScaleFactor = null;
         
         public Vector3 GetBoundsSize()
         {
@@ -73,168 +71,231 @@ namespace LinkDev.HologramManipulator
 
         private void Start()
         {
-            InitHologram(HologramType, EnableControllerMenu, RegisterInHologramsList);
+            InitHologram(HologramType);
         }
 
-        public void InitHologram(HologramType contentType, bool isControllerMenuEnabled, bool isHologramRegistrationEnabled)
+        public void InitHologram(HologramType contentType)
         {
-            if (ManipulationManager.Instance != null)
+            HologramType = contentType;
+
+            m_ManipulationSettings = GetComponent<ManipulatorSettings>();
+            if (m_ManipulationSettings == null)
+                m_ManipulationSettings = ManipulatorSettings.DefaultSetting;
+
+
+            if (!m_IsInitialized && m_ManipulationSettings != null)
             {
-                if (!m_IsInitialized)
-                {
-                    InitBoundaries(HologramType, isControllerMenuEnabled, isHologramRegistrationEnabled);
-                    InitControllers();
-                }
+                SetChildrenAndRenderers();
+                InitBoundaries();
+                SetHologramFaces();
+                SetParentGameObjects();
+                InitControllers();
+                UpdateParentPosition(transform.TransformPoint(m_BoundaryBox.BottomCenter));
+                
+                UpdateObjectManipulators(false);
+                PlaceMenu();
+                SetHologramState(m_HologramState);
+
+                RegisterHologramInActiveHologramList();
+
+                m_IsInitialized = true;
             }
-            else
-                Debug.Log("ManipulationManager is missing from the scene.");
+            
         }
 
         /// <summary>
-        /// First part of the initialization process; sperated for modularity and readability
-        /// it initializes the boundary box, set the hologram to appropriate size if it 
-        /// exceeds/falls short of a certain threshold and moves the pivot to the bottom 
-        /// center of the hologram
+        /// Register the Hologram in the <see cref="ManipulatorSettings.CurrentActiveControllers"/>
+        /// used mainly for snapping operations
         /// </summary>
-        /// <param name="hologramType"></param>
-        /// <param name="isControllerMenuEnabled"></param>
-        /// <param name="isHologramRegistrationEnabled"></param>
-        private void InitBoundaries(HologramType hologramType, bool isControllerMenuEnabled, bool isHologramRegistrationEnabled)
+        private void RegisterHologramInActiveHologramList()
         {
-            EnableControllerMenu = isControllerMenuEnabled;
-            RegisterInHologramsList = isHologramRegistrationEnabled;
-            HologramType = hologramType;
-
-            if (RegisterInHologramsList)
-                ManipulationManager.Instance.CurrentActiveControllers.Add(this);
-
+            if (m_ManipulationSettings.RegisterInHologramsList)
+                HologramManipulator.CurrentActiveHolograms.Add(this);
+        }
+        
+        /// <summary>
+        /// First main part of the initialization process; it initializes the boundary box, 
+        /// set the hologram to appropriate size if it exceeds/falls short of a certain threshold 
+        /// </summary>
+        private void InitBoundaries()
+        {
             m_BoundaryBox = new BoundaryBox(transform, HologramType);
 
             switch (HologramType)
             {
                 case HologramType._2D:
-                    m_ScaleControllerInstances = new HandScaling[4];
-                    m_RotateControllerInstances = new HandRotating[4];
-                    m_BoundaryLines = new BoundaryLineController[4];
-                    m_BoundaryBase = new BoundaryLineController[4];
+                    Init2DHologramBoundaries();
                     break;
                 case HologramType._3D:
-                    m_ScaleControllerInstances = new HandScaling[8];
-                    m_RotateControllerInstances = new HandRotating[12];
-                    m_BoundaryLines = new BoundaryLineController[12];
-                    m_BoundaryBase = new BoundaryLineController[4];
+                    Init3DHologramBoundaries();
                     break;
             }
+            CalculateBoundaries();
+            AdjustBoundarySize();
+            
+            //if (m_ScaleFactor == null)
+               //m_ScaleFactor = transform.localScale;
+        }
+        
+        private void Init2DHologramBoundaries()
+        {
+            m_ScaleControllerInstances = new HandScaling[4];
+            m_RotateControllerInstances = new HandRotating[4];
+            m_BoundaryLines = new BoundaryLineController[4];
+            m_BoundaryBase = new BoundaryLineController[4];
+        }
 
+        private void Init3DHologramBoundaries()
+        {
+            m_ScaleControllerInstances = new HandScaling[8];
+            m_RotateControllerInstances = new HandRotating[12];
+            m_BoundaryLines = new BoundaryLineController[12];
+            m_BoundaryBase = new BoundaryLineController[4];
+        }
+        
+        /// <summary>
+        /// Save this GameObject children, to be able to change the parent object position easily 
+        /// </summary>
+        private void SetChildrenAndRenderers()
+        {
             m_Children = new GameObject[transform.childCount];
             for (int i = 0; i < transform.childCount; i++)
                 m_Children[i] = transform.GetChild(i).gameObject;
             m_Renderers = GetComponentsInChildren<MeshRenderer>(true);
+        }
 
-
+        /// <summary>
+        /// Construct array of points that represent the face of the hologram, used for applying operation on a specific face
+        /// </summary>
+        private void SetHologramFaces()
+        {
             m_CubeFaces = new List<IEnumerable<int>>();
 
             switch (HologramType)
             {
                 case HologramType._2D:
-                    m_CubeFaces.Add(new[] { 0, 1, 2, 3 });
+                    Set2DHologramFaces();
                     break;
                 case HologramType._3D:
-                    m_CubeFaces.Add(new[] { 0, 1, 3, 2 });
-                    m_CubeFaces.Add(new[] { 3, 2, 6, 7 });
-                    m_CubeFaces.Add(new[] { 6, 7, 5, 4 });
-                    m_CubeFaces.Add(new[] { 5, 4, 0, 1 });
-                    m_CubeFaces.Add(new[] { 1, 5, 7, 3 });
-                    m_CubeFaces.Add(new[] { 0, 4, 6, 2 });
+                    Set3DHologramFaces();
                     break;
             }
+        }
 
-            CalculateBoundaries();
-            AdjustBoundarySize();
+        private void Set2DHologramFaces()
+        {
+            m_CubeFaces.Add(new[] { 0, 1, 2, 3 });
+        }
 
-            UpdateParentPosition(transform.TransformPoint(m_BoundaryBox.BottomCenter));
-            if (m_ScaleFactor == null)
-                m_ScaleFactor = transform.localScale;
+        private void Set3DHologramFaces()
+        {
+            m_CubeFaces.Add(new[] { 0, 1, 3, 2 });
+            m_CubeFaces.Add(new[] { 3, 2, 6, 7 });
+            m_CubeFaces.Add(new[] { 6, 7, 5, 4 });
+            m_CubeFaces.Add(new[] { 5, 4, 0, 1 });
+            m_CubeFaces.Add(new[] { 1, 5, 7, 3 });
+            m_CubeFaces.Add(new[] { 0, 4, 6, 2 });
         }
         
+        /// <summary>
+        /// Set the transform of the hologram/its manipulator parent transform to make the scene
+        ///explorer in unity tidier and avoid strange cases of input cascading
+        ///Remove this code or edit it at leisure
+        /// </summary>
+        private void SetParentGameObjects()
+        {
+            m_ManipulatorsContainer = new GameObject("Manipulators Container");
+            
+            if (m_ManipulationSettings.HologramsParent)
+                transform.SetParent(m_ManipulationSettings.HologramsParent.transform);
+            if (m_ManipulationSettings.ControllersParent)
+                m_ManipulatorsContainer.transform.SetParent(m_ManipulationSettings.ControllersParent.transform, false);
+        }
         /// <summary>
         /// Second part of the initialization, it creates the appropriate number of controllers (4/8)
         /// the hologram menu if provided, and place them in their correct initial position
         /// </summary>
         private void InitControllers()
         {
-            m_ManipulatorsContainer = new GameObject("Manipulators Container");
+            //Init Pivot
+            if (m_ManipulationSettings.PivotPrefab != null)
+                m_PivotInstance = Instantiate(m_ManipulationSettings.PivotPrefab, m_ManipulatorsContainer.transform);
 
-            ///TODO: We set the transform of the hologram/its manipulator parent transform to make the scene
-            ///explorer in unity tidier and avoid strange cases of input cascading
-            ///Remove this code or edit it at leisure
-            if (ManipulationManager.Instance.HologramsParent)
-                transform.SetParent(ManipulationManager.Instance.HologramsParent.transform);
-            if (ManipulationManager.Instance.ControllersParent)
-                m_ManipulatorsContainer.transform.SetParent(ManipulationManager.Instance.ControllersParent.transform, false);
-
-            if (ManipulationManager.Instance.PivotPrefab)
-                m_PivotInstance = Instantiate(ManipulationManager.Instance.PivotPrefab, m_ManipulatorsContainer.transform);
-            if (EnableControllerMenu && ManipulationManager.Instance.MenuPrefab)
-                m_MenuInstance = Instantiate(ManipulationManager.Instance.MenuPrefab, m_ManipulatorsContainer.transform);
-            if (m_MenuInstance)
+            //Init Menu Controller
+            if (m_ManipulationSettings.EnableControllerMenu && m_ManipulationSettings.ControllerMenuPrefab)
             {
-                m_MenuController = m_MenuInstance.GetComponentInChildren<IMenuController>(true);
-                if (m_MenuController != null)
-                    m_MenuController.Init(gameObject);
+                m_MenuInstance = Instantiate(m_ManipulationSettings.ControllerMenuPrefab, m_ManipulatorsContainer.transform);
+                if (m_MenuInstance)
+                {
+                    m_MenuController = m_MenuInstance.GetComponentInChildren<IMenuController>(true);
+                    if (m_MenuController != null)
+                        m_MenuController.Init(gameObject);
+                }
             }
-            if (ManipulationManager.Instance.IsBaseDrawingEnabled && ManipulationManager.Instance.BaseLinePrefab != null)
+
+            //Init Hologram Base
+            if (m_ManipulationSettings.EnableBaseDrawing && m_ManipulationSettings.BaseLinePrefab != null)
                 for (int i = 0; i < 4; i++)
-                    m_BoundaryBase[i] = Instantiate(ManipulationManager.Instance.BaseLinePrefab, m_ManipulatorsContainer.transform).GetComponent<BoundaryLineController>();
+                    m_BoundaryBase[i] = Instantiate(m_ManipulationSettings.BaseLinePrefab, m_ManipulatorsContainer.transform).GetComponent<BoundaryLineController>();
+
+            //Init Translate controllers
+            m_TranslateControllerInstance = gameObject.AddComponent<HandTranslating>();
+            m_TranslateControllerInstance.Init(DragStartedEventHandler, DragEndedEventHandler, HandTranslating.RotationModeEnum.LockObjectRotation, true, this, m_ManipulationSettings);
+
+            //Init Rotation and Scale controllers
             switch (HologramType)
             {
                 case HologramType._2D:
-                    for (int i = 0; i < 4; i++)
-                    {
-
-                        var currentScaleController = Instantiate(ManipulationManager.Instance.ScaleControllerPrefab, m_ManipulatorsContainer.transform).GetComponentInChildren<HandScaling>();
-                        currentScaleController.Init(ScaleStartedEventHandler, ScaleEndedEventHandler, transform, ManipulationManager.Instance.ScaleFactor, i, (i + 2) % 4, m_MinScaleFactor, m_MaxScaleFactor);
-                        m_ScaleControllerInstances[i] = (currentScaleController);
-
-                        var currentRotateController = Instantiate(ManipulationManager.Instance.RotateControllerPrefab, m_ManipulatorsContainer.transform).GetComponentInChildren<HandRotating>();
-                        currentRotateController.Init(RotateStartedEventHandler, RotateEndedEventHandler, transform, ManipulationManager.Instance.RotateFactor);
-                        m_RotateControllerInstances[i] = (currentRotateController);
-                        if (i % 2 == 1)
-                            m_RotateControllerInstances[i].RotationAxis = Axis.X;
-                        else
-                            m_RotateControllerInstances[i].RotationAxis = Axis.Y;
-
-                        m_BoundaryLines[i] = Instantiate(ManipulationManager.Instance.BoxLinePrefab, m_ManipulatorsContainer.transform).GetComponent<BoundaryLineController>();
-                    }
+                    Init2DHologramControllers();
                     break;
                 case HologramType._3D:
-                    for (int i = 0; i < 12; i++)
-                    {
-                        if (i < 8)
-                        {
-                            var currentScaleController = Instantiate(ManipulationManager.Instance.ScaleControllerPrefab, m_ManipulatorsContainer.transform).GetComponentInChildren<HandScaling>();
-                            currentScaleController.Init(ScaleStartedEventHandler, ScaleEndedEventHandler, transform, ManipulationManager.Instance.ScaleFactor, i, 7 - i, m_MinScaleFactor, m_MaxScaleFactor);
-                            m_ScaleControllerInstances[i] = (currentScaleController);
-                        }
-                        var currentRotateController = Instantiate(ManipulationManager.Instance.RotateControllerPrefab, m_ManipulatorsContainer.transform).GetComponentInChildren<HandRotating>();
-                        currentRotateController.Init(RotateStartedEventHandler, RotateEndedEventHandler, transform, ManipulationManager.Instance.RotateFactor);
-                        m_RotateControllerInstances[i] = (currentRotateController);
-                        if (i < 4)
-                            m_RotateControllerInstances[i].RotationAxis = Axis.X;
-                        else if (i < 8)
-                            m_RotateControllerInstances[i].RotationAxis = Axis.Y;
-                        else
-                            m_RotateControllerInstances[i].RotationAxis = Axis.Z;
-                        m_BoundaryLines[i] = Instantiate(ManipulationManager.Instance.BoxLinePrefab, m_ManipulatorsContainer.transform).GetComponent<BoundaryLineController>(); ;
-                    }
+                    Init3DHologramControllers();
                     break;
             }
-            m_TranslateControllerInstance = gameObject.AddComponent<HandTranslating>();
-            m_TranslateControllerInstance.Init(DragStartedEventHandler, DragEndedEventHandler, ManipulationManager.Instance.TranslateFactor, HandTranslating.RotationModeEnum.LockObjectRotation, true);
-            m_IsInitialized = true;
-            UpdateObjectManipulators(false);
-            PlaceMenu();
-            SetHologramState(m_HologramState);
+        }
+        private void Init2DHologramControllers()
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                var currentScaleController = Instantiate(m_ManipulationSettings.ScaleControllerPrefab, m_ManipulatorsContainer.transform).GetComponentInChildren<HandScaling>();
+                currentScaleController.Init(ScaleStartedEventHandler, ScaleEndedEventHandler, transform, m_ManipulationSettings.ScaleFactor, i, (i + 2) % 4, m_MinScaleFactor, m_MaxScaleFactor);
+                m_ScaleControllerInstances[i] = (currentScaleController);
+
+                var currentRotateController = Instantiate(m_ManipulationSettings.RotateControllerPrefab, m_ManipulatorsContainer.transform).GetComponentInChildren<HandRotating>();
+                currentRotateController.Init(RotateStartedEventHandler, RotateEndedEventHandler, transform, m_ManipulationSettings.RotateFactor);
+                m_RotateControllerInstances[i] = (currentRotateController);
+                if (i % 2 == 1)
+                    m_RotateControllerInstances[i].RotationAxis = Axis.X;
+                else
+                    m_RotateControllerInstances[i].RotationAxis = Axis.Y;
+
+                m_BoundaryLines[i] = Instantiate(m_ManipulationSettings.BoxLinePrefab, m_ManipulatorsContainer.transform).GetComponent<BoundaryLineController>();
+            }
+
+        }
+
+        private void Init3DHologramControllers()
+        {
+            for (int i = 0; i < 12; i++)
+            {
+                if (i < 8)
+                {
+                    var currentScaleController = Instantiate(m_ManipulationSettings.ScaleControllerPrefab, m_ManipulatorsContainer.transform).GetComponentInChildren<HandScaling>();
+                    currentScaleController.Init(ScaleStartedEventHandler, ScaleEndedEventHandler, transform, m_ManipulationSettings.ScaleFactor, i, 7 - i, m_MinScaleFactor, m_MaxScaleFactor);
+                    m_ScaleControllerInstances[i] = (currentScaleController);
+                }
+                var currentRotateController = Instantiate(m_ManipulationSettings.RotateControllerPrefab, m_ManipulatorsContainer.transform).GetComponentInChildren<HandRotating>();
+                currentRotateController.Init(RotateStartedEventHandler, RotateEndedEventHandler, transform, m_ManipulationSettings.RotateFactor);
+                m_RotateControllerInstances[i] = (currentRotateController);
+                if (i < 4)
+                    m_RotateControllerInstances[i].RotationAxis = Axis.X;
+                else if (i < 8)
+                    m_RotateControllerInstances[i].RotationAxis = Axis.Y;
+                else
+                    m_RotateControllerInstances[i].RotationAxis = Axis.Z;
+                m_BoundaryLines[i] = Instantiate(m_ManipulationSettings.BoxLinePrefab, m_ManipulatorsContainer.transform).GetComponent<BoundaryLineController>(); ;
+            }
+
         }
 
         /// <summary>
@@ -243,55 +304,74 @@ namespace LinkDev.HologramManipulator
         /// <param name="value">Current state of the hologram</param>
         public void SetHologramState(HologramState value)
         {
-            bool isBaseDrawn = false, isMenuShown = false, isControllersShown = false, isBoundaryShown = false;
+            bool isBaseEnabled = false, isMenuEnabled = false, isControllersEnabled = false, isBoundaryEnabled = false, isPivotEnabled;
 
             switch (value)
             {
                 case HologramState.Inactive:
-                    isBaseDrawn = false;
-                    isMenuShown = false;
-                    isControllersShown = false;
-                    isBoundaryShown = false;
-                    break;
-                case HologramState.Active:
-                    isBaseDrawn = false;
-                    isMenuShown = true;
-                    isControllersShown = true;
-                    isBoundaryShown = true;
+                    SetHologramStateFlagsForInactive(out isBaseEnabled, out isMenuEnabled, out isControllersEnabled, out isBoundaryEnabled);
                     break;
                 case HologramState.Focused:
-                    isBaseDrawn = true;
-                    isMenuShown = false;
-                    isControllersShown = false;
-                    isBoundaryShown = true;
+                    SetHologramStateFlagsForFocused(out isBaseEnabled, out isMenuEnabled, out isControllersEnabled, out isBoundaryEnabled);
                     break;
+                case HologramState.Active:
+                    SetHologramStateFlagsForActive(out isBaseEnabled, out isMenuEnabled, out isControllersEnabled, out isBoundaryEnabled);
+                    break;
+                
             }
 
+            isPivotEnabled = m_ManipulationSettings && m_ManipulationSettings.EnablePivotDrawing;
+            isBaseEnabled &= m_ManipulationSettings && m_ManipulationSettings.EnableBaseDrawing;
+
+            SetControllerState(isBaseEnabled, isMenuEnabled, isControllersEnabled, isBoundaryEnabled, isPivotEnabled);
+           
+            m_HologramState = value;
+        }
+
+        private void SetHologramStateFlagsForInactive(out bool isBaseEnabled, out bool isMenuEnabled, out bool isControllersEnabled, out bool isBoundaryEnabled)
+        {
+            isBaseEnabled = false;
+            isMenuEnabled = false;
+            isControllersEnabled = false;
+            isBoundaryEnabled = false;
+        }
+        private void SetHologramStateFlagsForFocused(out bool isBaseEnabled, out bool isMenuEnabled, out bool isControllersEnabled, out bool isBoundaryEnabled)
+        {
+            isBaseEnabled = true;
+            isMenuEnabled = false;
+            isControllersEnabled = false;
+            isBoundaryEnabled = true;
+        }
+        private void SetHologramStateFlagsForActive(out bool isBaseEnabled, out bool isMenuEnabled, out bool isControllersEnabled, out bool isBoundaryEnabled)
+        {
+            isBaseEnabled = false;
+            isMenuEnabled = true;
+            isControllersEnabled = true;
+            isBoundaryEnabled = true;
+        }
+
+        private void SetControllerState (bool isBaseEnabled, bool isMenuEnabled, bool isControllersEnabled, bool isBoundaryEnabled, bool isPivotEnabled)
+        {
             if (m_MenuInstance)
-                m_MenuInstance.SetActive(isMenuShown);
+                m_MenuInstance.SetActive(isMenuEnabled);
             foreach (var instance in m_ScaleControllerInstances)
                 if (instance)
-                    instance.gameObject.SetActive(isControllersShown);
+                    instance.gameObject.SetActive(isControllersEnabled);
             foreach (var instance in m_RotateControllerInstances)
                 if (instance)
-                    instance.gameObject.SetActive(isControllersShown);
+                    instance.gameObject.SetActive(isControllersEnabled);
             if (m_TranslateControllerInstance)
-                m_TranslateControllerInstance.enabled = isControllersShown;
+                m_TranslateControllerInstance.enabled = isControllersEnabled;
             foreach (var instance in m_BoundaryLines)
                 if (instance)
-                    instance.gameObject.SetActive(isBoundaryShown);
-            ///This check is done to prevent trying to access ManipulationManager when destroying objects
-            ///because Manipulation can be destroyed before this one
-            if (ManipulationManager.Instance)
-            {
-                if (m_PivotInstance)
-                    m_PivotInstance.SetActive(ManipulationManager.Instance.IsPivotDrawingEnabled);
+                    instance.gameObject.SetActive(isBoundaryEnabled);
 
-                foreach (var obj in m_BoundaryBase)
-                    if (obj)
-                        obj.gameObject.SetActive(isBaseDrawn && ManipulationManager.Instance.IsBaseDrawingEnabled);
-            }
-            m_HologramState = value;
+            if (m_PivotInstance)
+                m_PivotInstance.SetActive(isPivotEnabled);
+
+            foreach (var obj in m_BoundaryBase)
+                if (obj)
+                    obj.gameObject.SetActive(isBaseEnabled);
         }
 
         #region ControllersToggles
@@ -339,13 +419,17 @@ namespace LinkDev.HologramManipulator
         /// <param name="state"></param>
         public void SetOtherActiveHologramsState(bool state)
         {
-            if (ManipulationManager.Instance.CurrentActiveControllers != null)
-                foreach (var obj in ManipulationManager.Instance.CurrentActiveControllers)
+            if (HologramManipulator.CurrentActiveHolograms != null)
+            {
+                foreach (var obj in HologramManipulator.CurrentActiveHolograms)
+                {
                     if (obj != this && obj.m_HologramState == HologramState.Active)
                     {
                         obj.SetHologramControllersState(state);
                         obj.SetHologramState(HologramState.Inactive);
                     }
+                }
+            }
         }
         #endregion
 
@@ -370,28 +454,18 @@ namespace LinkDev.HologramManipulator
         private Bounds GetBoundsFromMesh(bool respectScale)
         {
             Vector3 currentPosition = transform.position;
-            transform.position = Vector3.zero;
             Quaternion currentRotation = transform.rotation;
-            transform.rotation = Quaternion.identity;
-            Vector3 currentScale = Vector3.one;
-            if (!respectScale)
-            {
-                currentScale = transform.localScale;
-                transform.localScale = Vector3.one;
-            }
+            Vector3 currentScale = transform.localScale;
+
+            SetTransfromValue(transform, Vector3.zero, Quaternion.identity, (respectScale) ? (Vector3?)null : Vector3.one);
 
             Bounds combinedBounds = m_Renderers[0].bounds;
-
             for (int i = 1; i < m_Renderers.Length; i++)
-            {
                 combinedBounds.Encapsulate(m_Renderers[i].bounds);
-            }
 
+            
+            SetTransfromValue(transform, currentPosition, currentRotation, currentScale);
 
-            if (!respectScale)
-                transform.localScale = currentScale;
-            transform.rotation = currentRotation;
-            transform.position = currentPosition;
             return combinedBounds;
         }
 
@@ -405,7 +479,7 @@ namespace LinkDev.HologramManipulator
 
         /// <summary>
         /// Adjust the size of the hologram to not exceed or fall off short a certain size
-        /// defined in <see cref="ManipulationManager"/>
+        /// defined in <see cref="ManipulatorSettings"/>
         /// </summary>
         private void AdjustBoundarySize()
         {
@@ -414,12 +488,12 @@ namespace LinkDev.HologramManipulator
             float scaleFactor = 1;
             var maxBoundSide = Mathf.Max(combinedBounds.size.x, combinedBounds.size.y, combinedBounds.size.z);
             //var minBoundSize = Mathf.Min(combinedBounds.size.x, combinedBounds.size.y, combinedBounds.size.z);
-            m_MinScaleFactor = ManipulationManager.Instance.MinObjectSize / maxBoundSide;
-            m_MaxScaleFactor = ManipulationManager.Instance.MaxObjectSize / maxBoundSide;
-            if (maxBoundSide < ManipulationManager.Instance.MinObjectSize)
-                scaleFactor = ManipulationManager.Instance.MinObjectSize / maxBoundSide;
-            else if (maxBoundSide > ManipulationManager.Instance.MaxObjectSize)
-                scaleFactor = ManipulationManager.Instance.MaxObjectSize / maxBoundSide;
+            m_MinScaleFactor = m_ManipulationSettings.MinObjectSize / maxBoundSide;
+            m_MaxScaleFactor = m_ManipulationSettings.MaxObjectSize / maxBoundSide;
+            if (maxBoundSide < m_ManipulationSettings.MinObjectSize)
+                scaleFactor = m_ManipulationSettings.MinObjectSize / maxBoundSide;
+            else if (maxBoundSide > m_ManipulationSettings.MaxObjectSize)
+                scaleFactor = m_ManipulationSettings.MaxObjectSize / maxBoundSide;
             transform.localScale *= scaleFactor;
         }
         #endregion BoundaryCalculation
@@ -466,60 +540,64 @@ namespace LinkDev.HologramManipulator
         {
             m_BoundaryBox.UpdateEdgePoints();
 
-            m_PivotInstance.transform.position = OriginalPivot();
-            m_PivotInstance.transform.rotation = transform.rotation;
-            m_PivotInstance.transform.localScale = Vector3.one * m_BoundaryBox.EdgePointsScale;
+            SetTransfromValue(m_PivotInstance.transform, OriginalPivot(), transform.rotation, Vector3.one * m_BoundaryBox.EdgePointsScale);
 
+            for (int i = 0; i < m_ScaleControllerInstances.Length; i++)
+                SetTransfromValue(m_ScaleControllerInstances[i].transform, m_BoundaryBox.ControllerPointsPosition[i], m_BoundaryBox.EdgePointsQuaternion[i], Vector3.one * m_BoundaryBox.EdgePointsScale);
+
+            if (drawingEnabled)
+            {
+                switch (HologramType)
+                {
+                    case HologramType._2D:
+                        PlaceBoundingBoxFor2DHologram();
+                        break;
+                    case HologramType._3D:
+                        PlaceBoundingBoxFor3DHologram();
+                        break;
+                }
+            }
+        }
+        
+        private void PlaceBoundingBoxFor2DHologram()
+        {
+            for (int i = 0; i < m_ScaleControllerInstances.Length; i++)
+            {
+                m_BoundaryLines[i].DrawTube(m_BoundaryBox.ControllerPointsPosition[i], m_BoundaryBox.ControllerPointsPosition[(i + 1) % m_ScaleControllerInstances.Length], m_BoundaryBox.ScaleFactor * m_ManipulationSettings.BoundaryBoxLineWidthFactor);
+                SetTransfromValue(m_RotateControllerInstances[i].transform, m_BoundaryLines[i].transform.position, m_BoundaryBox.EdgePointsQuaternion[i], Vector3.one * m_BoundaryBox.EdgePointsScale);
+            }
+        }
+
+        private void PlaceBoundingBoxFor3DHologram()
+        {
             for (int i = 0, j = 0, x = 0, y = 0, z = 2; i < m_ScaleControllerInstances.Length; i++)
             {
-                m_ScaleControllerInstances[i].transform.position = m_BoundaryBox.ControllerPointsPosition[i];
-                m_ScaleControllerInstances[i].transform.rotation = m_BoundaryBox.EdgePointsQuaternion[i];
-                m_ScaleControllerInstances[i].transform.localScale = Vector3.one * m_BoundaryBox.EdgePointsScale;
-                if (drawingEnabled)
+                //First Pair of horizontal points {(0, 1), (2, 3), (4, 5), (6, 7)}
+                if (i % 2 == 0)
                 {
-                    switch (HologramType)
-                    {
-                        case HologramType._2D:
-                            m_BoundaryLines[i].DrawTube(m_BoundaryBox.ControllerPointsPosition[i], m_BoundaryBox.ControllerPointsPosition[(i + 1) % m_ScaleControllerInstances.Length], m_BoundaryBox.ScaleFactor * ManipulationManager.Instance.BoundaryBoxLineWidthFactor);
-                            m_RotateControllerInstances[i].transform.position = m_BoundaryLines[i].transform.position;
-                            m_RotateControllerInstances[i].transform.rotation = m_BoundaryBox.EdgePointsQuaternion[i];
-                            m_RotateControllerInstances[i].transform.localScale = Vector3.one * m_BoundaryBox.EdgePointsScale;
-                            break;
-                        case HologramType._3D:
-                            if (i % 2 == 0)
-                            {
-                                m_BoundaryLines[j].DrawTube(m_BoundaryBox.ControllerPointsPosition[i], m_BoundaryBox.ControllerPointsPosition[i + 1], m_BoundaryBox.ScaleFactor * ManipulationManager.Instance.BoundaryBoxLineWidthFactor);
-                                m_RotateControllerInstances[x].transform.position = m_BoundaryLines[j].transform.position;
-                                m_RotateControllerInstances[x].transform.rotation = m_BoundaryBox.EdgePointsQuaternion[i];
-                                m_RotateControllerInstances[x].transform.localScale = Vector3.one * m_BoundaryBox.EdgePointsScale;
-                                j++;
-                                x++;
-                            }
+                    m_BoundaryLines[j].DrawTube(m_BoundaryBox.ControllerPointsPosition[i], m_BoundaryBox.ControllerPointsPosition[i + 1], m_BoundaryBox.ScaleFactor * m_ManipulationSettings.BoundaryBoxLineWidthFactor);
+                    SetTransfromValue(m_RotateControllerInstances[x].transform, m_BoundaryLines[j].transform.position, m_BoundaryBox.EdgePointsQuaternion[i], Vector3.one * m_BoundaryBox.EdgePointsScale);
+                    j++;
+                    x++;
+                }
 
-                            //Vertical Pairs { (0, 2), (1, 3), (4, 6), (5, 7)}
-                            if (i % 4 < 2)
-                            {
-                                m_BoundaryLines[j].DrawTube(m_BoundaryBox.ControllerPointsPosition[i], m_BoundaryBox.ControllerPointsPosition[i + 2], m_BoundaryBox.ScaleFactor * ManipulationManager.Instance.BoundaryBoxLineWidthFactor);
-                                //These are the vertical tube, so we draw the Y rotation controller in there center
-                                m_RotateControllerInstances[y + 4].transform.position = m_BoundaryLines[j].transform.position;
-                                m_RotateControllerInstances[y + 4].transform.rotation = m_BoundaryBox.EdgePointsQuaternion[i];
-                                m_RotateControllerInstances[y + 4].transform.localScale = Vector3.one * m_BoundaryBox.EdgePointsScale;
-                                j++;
-                                y++;
-                            }
+                //Vertical Pairs { (0, 2), (1, 3), (4, 6), (5, 7)}
+                if (i % 4 < 2)
+                {
+                    m_BoundaryLines[j].DrawTube(m_BoundaryBox.ControllerPointsPosition[i], m_BoundaryBox.ControllerPointsPosition[i + 2], m_BoundaryBox.ScaleFactor * m_ManipulationSettings.BoundaryBoxLineWidthFactor);
+                    //These are the vertical tube, so we draw the Y rotation controller in there center
+                    SetTransfromValue(m_RotateControllerInstances[y + 4].transform, m_BoundaryLines[j].transform.position, m_BoundaryBox.EdgePointsQuaternion[i], Vector3.one * m_BoundaryBox.EdgePointsScale);
+                    j++;
+                    y++;
+                }
 
-                            // Second direction of Horizatal Pairs { (0, 4), (1, 5), (2, 6), (3, 7)}
-                            if (i < 4)
-                            {
-                                m_BoundaryLines[j].DrawTube(m_BoundaryBox.ControllerPointsPosition[i], m_BoundaryBox.ControllerPointsPosition[i + 4], m_BoundaryBox.ScaleFactor * ManipulationManager.Instance.BoundaryBoxLineWidthFactor);
-                                m_RotateControllerInstances[z + 8].transform.position = m_BoundaryLines[j].transform.position;
-                                m_RotateControllerInstances[z + 8].transform.rotation = m_BoundaryBox.EdgePointsQuaternion[i];
-                                m_RotateControllerInstances[z + 8].transform.localScale = Vector3.one * m_BoundaryBox.EdgePointsScale;
-                                j++;
-                                z = ++z % 4;
-                            }
-                            break;
-                    }
+                // Second direction of horizontal Pairs { (0, 4), (1, 5), (2, 6), (3, 7)}
+                if (i < 4)
+                {
+                    m_BoundaryLines[j].DrawTube(m_BoundaryBox.ControllerPointsPosition[i], m_BoundaryBox.ControllerPointsPosition[i + 4], m_BoundaryBox.ScaleFactor * m_ManipulationSettings.BoundaryBoxLineWidthFactor);
+                    SetTransfromValue(m_RotateControllerInstances[z + 8].transform, m_BoundaryLines[j].transform.position, m_BoundaryBox.EdgePointsQuaternion[i], Vector3.one * m_BoundaryBox.EdgePointsScale);
+                    j++;
+                    z = ++z % 4;
                 }
             }
         }
@@ -535,21 +613,21 @@ namespace LinkDev.HologramManipulator
         private void PlaceMenu()
         {
             Vector3[] centerPoints = null, cornerPoints = null;
-            if ((m_MenuInstance != null && m_MenuInstance.activeSelf) || ManipulationManager.Instance.IsBaseDrawingEnabled)
+            if ((m_MenuInstance != null && m_MenuInstance.activeSelf) || m_ManipulationSettings.EnableBaseDrawing)
                 m_BoundaryBox.CalculateProjection(out cornerPoints, out centerPoints, m_BoundaryBox.EdgePointsScale);
 
             if ((m_MenuInstance != null && m_MenuInstance.activeSelf))
             {
                 var index = centerPoints.IndexOfMinBy(v => Vector3.Distance(v, Camera.main.transform.position));
                 m_MenuInstance.transform.position = centerPoints[index];
-                m_MenuInstance.transform.localScale = Vector3.one * m_BoundaryBox.EdgePointsScale * ManipulationManager.Instance.MenuScaleFactor;
+                m_MenuInstance.transform.localScale = Vector3.one * m_BoundaryBox.EdgePointsScale * m_ManipulationSettings.MenuScaleFactor;
 
                 var f = centerPoints[index] - (centerPoints[mod(index + 1, 4)] + centerPoints[mod(index - 1, 4)]) / 2;
                 f = Vector3.Dot(f, Camera.main.transform.forward) < 0 ? f : -f;
                 m_MenuInstance.transform.rotation = Quaternion.LookRotation(f, Vector3.up);
             }
-            if (ManipulationManager.Instance.IsBaseDrawingEnabled)
-                DrawBaseProjection(cornerPoints, m_BoundaryBox.EdgePointsScale / 2, m_BoundaryBox.ScaleFactor * ManipulationManager.Instance.BoundaryBoxLineWidthFactor);
+            if (m_ManipulationSettings.EnableBaseDrawing)
+                DrawBaseProjection(cornerPoints, m_BoundaryBox.EdgePointsScale / 2, m_BoundaryBox.ScaleFactor * m_ManipulationSettings.BoundaryBoxLineWidthFactor);
         }
 
         /// <summary>
@@ -621,23 +699,9 @@ namespace LinkDev.HologramManipulator
         {
             if (m_IsInitialized)
             {
-                if (ManipulationManager.Instance && RegisterInHologramsList)
-                    ManipulationManager.Instance.CurrentActiveControllers.Remove(this);
-                if (m_MenuInstance)
-                    Destroy(m_MenuInstance);
-                for (int i = 0; i < m_ScaleControllerInstances.Length; i++)
-                    if (m_ScaleControllerInstances[i])
-                        Destroy(m_ScaleControllerInstances[i].transform.parent.gameObject);
-                for (int i = 0; i < m_RotateControllerInstances.Length; i++)
-                    if (m_RotateControllerInstances[i])
-                        Destroy(m_RotateControllerInstances[i].gameObject);
-                for (int i = 0; i < m_BoundaryLines.Length; i++)
-                    if (m_BoundaryLines[i])
-                        Destroy(m_BoundaryLines[i].gameObject);
-                for (int i = 0; i < m_BoundaryBase.Length; i++)
-                    if (m_BoundaryBase[i])
-                        Destroy(m_BoundaryBase[i].gameObject);
-                Destroy(m_PivotInstance);
+                if (HologramManipulator.CurrentActiveHolograms != null && m_ManipulationSettings.RegisterInHologramsList)
+                    HologramManipulator.CurrentActiveHolograms.Remove(this);
+                
                 Destroy(m_ManipulatorsContainer);
             }
         }
@@ -673,7 +737,12 @@ namespace LinkDev.HologramManipulator
             {
                 SetHologramState(HologramState.Active);
                 m_TranslateControllerInstance.IsDraggingEnabled = true;
+
                 ///TODO: Fire any events that would trigger when this object is clicked here
+                m_CurrentActiveHologram = this;
+                foreach (var hologram in CurrentActiveHolograms)
+                    if (hologram != this)
+                        hologram.SetHologramState(HologramState.Inactive);
             }
         }
         #endregion
@@ -763,10 +832,22 @@ namespace LinkDev.HologramManipulator
             rot = transform.localRotation;
             sca = transform.localScale;
         }
+
         private int mod(int x, int m)
         {
             return (x % m + m) % m;
         }
+
+        private void SetTransfromValue (Transform target, Vector3? pos, Quaternion? rot, Vector3? sca)
+        {
+            if (pos.HasValue)
+                target.localPosition = pos.Value;
+            if (rot.HasValue)
+                target.localRotation = rot.Value;
+            if (sca.HasValue)
+                target.localScale = sca.Value;
+        }
+
         #endregion
 
     }

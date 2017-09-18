@@ -26,7 +26,7 @@ namespace LinkDev.HologramManipulator.InputModule
         private Transform HostTransform;
 
         /// <summary>
-        /// The speed of change of the object rotation determined from <see cref="ManipulationManager.RotateFactor"/> 
+        /// The speed of change of the object rotation determined from <see cref="ManipulatorSettings.RotateFactor"/> 
         /// </summary>
         private float RotateFactor;
 

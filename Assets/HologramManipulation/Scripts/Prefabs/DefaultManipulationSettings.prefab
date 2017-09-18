@@ -19,9 +19,9 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 4519452164909206}
-  - component: {fileID: 114919300295771480}
+  - component: {fileID: 114159746930387338}
   m_Layer: 0
-  m_Name: ManipulationManager
+  m_Name: DefaultManipulationSettings
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -40,7 +40,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &114919300295771480
+--- !u!114 &114159746930387338
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
@@ -51,7 +51,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4784de6befdb31469089fe1745516dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CurrentActiveControllers: []
   RotateControllerPrefab: {fileID: 1963797349280120, guid: 1c365955a9455824ab3d00e726ed9f7c,
     type: 2}
   ScaleControllerPrefab: {fileID: 1768989509447430, guid: 943be141291e4fe49acfda0ecd1fb14e,
@@ -65,12 +64,18 @@ MonoBehaviour:
   MinObjectSize: 0.2
   MaxObjectSize: 3
   MenuScaleFactor: 2.5
+  SnappingTarget: 0
+  SnappingMode: 2
+  SnappingDistance: 0.05
   HologramsParent: {fileID: 0}
   ControllersParent: {fileID: 0}
-  IsBaseDrawingEnabled: 0
+  EnableBaseDrawing: 0
   BaseLinePrefab: {fileID: 1921519996680070, guid: 1fd188edea465b747a86288617abdbae,
     type: 2}
-  IsPivotDrawingEnabled: 0
+  EnablePivotDrawing: 0
   PivotPrefab: {fileID: 1695930689128000, guid: 0d68d6cea19615d45a2267a02309c468,
     type: 2}
-  MenuPrefab: {fileID: 0}
+  EnableControllerMenu: 1
+  ControllerMenuPrefab: {fileID: 1839513779563576, guid: f027e617c74b96a43bbe62e06e23f768,
+    type: 2}
+  RegisterInHologramsList: 1

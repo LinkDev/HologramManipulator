@@ -155,5 +155,16 @@ namespace LinkDev
                 return minIndex;
             }
         }
+        public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
+        {
+            if (source == null)
+                throw new NullReferenceException("source is null");
+            if (action == null)
+                throw new NullReferenceException("action is null");
+            foreach (T element in source)
+            {
+                action(element);
+            }
+        }
     }
 }

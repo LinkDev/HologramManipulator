@@ -1,0 +1,26 @@
+fileFormatVersion: 2
+guid: d4784de6befdb31469089fe1745516dc
+timeCreated: 1505653376
+licenseType: Free
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - RotateControllerPrefab: {fileID: 1963797349280120, guid: 1c365955a9455824ab3d00e726ed9f7c,
+      type: 2}
+  - ScaleControllerPrefab: {fileID: 1768989509447430, guid: 943be141291e4fe49acfda0ecd1fb14e,
+      type: 2}
+  - BoxLinePrefab: {fileID: 1346323259724296, guid: 068f05e8f76b7ae47886ddafbd2ec8e8,
+      type: 2}
+  - HologramsParent: {instanceID: 0}
+  - ControllersParent: {instanceID: 0}
+  - BaseLinePrefab: {fileID: 1921519996680070, guid: 1fd188edea465b747a86288617abdbae,
+      type: 2}
+  - PivotPrefab: {fileID: 1695930689128000, guid: 0d68d6cea19615d45a2267a02309c468,
+      type: 2}
+  - ControllerMenuPrefab: {fileID: 1839513779563576, guid: f027e617c74b96a43bbe62e06e23f768,
+      type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
