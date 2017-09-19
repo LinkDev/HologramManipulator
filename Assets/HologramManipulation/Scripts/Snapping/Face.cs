@@ -140,15 +140,7 @@ namespace LinkDev.HologramManipulator.SnappingModule
         {
             m_Parent.HideHighlight();
         }
-
-        public void DebugDraw(Color color)
-        {
-            Debug.DrawLine(CornerPoints[0], CornerPoints[1], color);
-            Debug.DrawLine(CornerPoints[1], CornerPoints[2], color);
-            Debug.DrawLine(CornerPoints[2], CornerPoints[3], color);
-            Debug.DrawLine(CornerPoints[3], CornerPoints[0], color);
-        }
-
+        
         private static Vector3 SetVectorLength(Vector3 vector, float size)
         {
 

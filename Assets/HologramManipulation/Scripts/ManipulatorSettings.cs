@@ -5,11 +5,6 @@ using UnityEngine;
 
 namespace LinkDev.HologramManipulator
 {
-    public enum Axis { X, Y, Z };
-    public enum HologramType { _3D, _2D }
-    public enum HologramState { Inactive, Focused, Active, Manipulating };
-    public enum SnappingTarget { Off, SpatialOnly, HolographicOnly, SpatialAndHolographic};
-    public enum SnappingMode { Pivot, Face, PivotAndFaces};
     public class ManipulatorSettings : MonoBehaviour
     {
         /// <summary>
@@ -32,16 +27,25 @@ namespace LinkDev.HologramManipulator
         public GameObject ScaleControllerPrefab;
         public GameObject BoxLinePrefab;
 
-        public float BoundaryBoxLineWidthFactor = 0.08f;
         public float ScaleFactor = 8f;
         public float RotateFactor = 800;
         public float TranslateFactor = 2;
         public float MinObjectSize = 0.2f;
         public float MaxObjectSize = 3;
+
+        [Header ("UI Elements")]
+        [Tooltip("Minimum size of the hologram before the UI stops scaling down")]
+        public float HologramMinimumSizeForUIScaling = 0.5f;
+        [Tooltip("The scaling factor applied to UI relative to the Hologram size")]
+        public float UIScalingFactor = 1 / 20f;
+        [Tooltip("Minimum scale of UI")]
+        public float UIMinimumScale = 1 / 60f;
+        [Tooltip("Scale factor of the controller menu relative to regular controllers")]
         public float MenuScaleFactor = 2.5f;
+        [Tooltip("Scale factor of the boundary box edges relative to regular controllers")]
+        public float BoundaryBoxLineWidthFactor = 0.08f;
 
         [Header("Optional components")]
-        
         public SnappingTarget SnappingTarget = SnappingTarget.Off;
         public SnappingMode SnappingMode = SnappingMode.PivotAndFaces;
         public float SnappingDistance = 0.05f;

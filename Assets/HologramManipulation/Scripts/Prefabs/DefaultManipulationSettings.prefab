@@ -57,13 +57,16 @@ MonoBehaviour:
     type: 2}
   BoxLinePrefab: {fileID: 1346323259724296, guid: 068f05e8f76b7ae47886ddafbd2ec8e8,
     type: 2}
-  BoundaryBoxLineWidthFactor: 0.08
   ScaleFactor: 8
   RotateFactor: 800
   TranslateFactor: 2
   MinObjectSize: 0.2
   MaxObjectSize: 3
+  HologramMinimumSizeForUIScaling: 0.5
+  UIScalingFactor: 0.05
+  UIMinimumScale: 0.016666668
   MenuScaleFactor: 2.5
+  BoundaryBoxLineWidthFactor: 0.08
   SnappingTarget: 0
   SnappingMode: 2
   SnappingDistance: 0.05

@@ -80,9 +80,7 @@ namespace LinkDev.HologramManipulator.InputModule
         private uint currentInputSourceId;
 
         #region Snapping Variables
-        private SnappingTarget m_SnappingTarget = SnappingTarget.Off;
-        private SnappingMode m_SnappingMode = SnappingMode.Face;
-        private float m_SnappingDistance;
+        private ManipulatorSettings m_Settings;
         private HologramManipulator m_BoundaryController;
         private int? m_PeerIndex;
         private List<Cuboid> m_NormalPeers;
@@ -113,9 +111,7 @@ namespace LinkDev.HologramManipulator.InputModule
             RotationMode = rotationMode;
             IsDraggingEnabled = isDraggingEnabled;
             DistanceScale = manipulationSettings.TranslateFactor;
-            m_SnappingDistance = manipulationSettings.SnappingDistance;
-            m_SnappingMode = manipulationSettings.SnappingMode;
-            m_SnappingTarget = manipulationSettings.SnappingTarget;
+            m_Settings = manipulationSettings;
             m_BoundaryController = GetComponent<HologramManipulator>();
         }
 
@@ -317,7 +313,7 @@ namespace LinkDev.HologramManipulator.InputModule
 
                 m_NormalPeers = null;
                 m_SpatialPeers = null;
-                switch (m_SnappingTarget)
+                switch (m_Settings.SnappingTarget)
                 {
                     case SnappingTarget.Off:
                         break;
@@ -354,7 +350,7 @@ namespace LinkDev.HologramManipulator.InputModule
         private void UpdateSnapping(bool DraggingEnded = false)
         {
             Vector3 snappingDisplacement = Vector3.zero;
-            switch (m_SnappingTarget)
+            switch (m_Settings.SnappingTarget)
             {
                 case SnappingTarget.Off:
                     return;
@@ -396,7 +392,7 @@ namespace LinkDev.HologramManipulator.InputModule
             {
                 var thisCuboid = new Cuboid(m_BoundaryController.GetBoundaryEdges(), m_BoundaryController, m_BoundaryController.OriginalPivot());
 
-                switch (m_SnappingMode)
+                switch (m_Settings.SnappingMode)
                 {
                     case SnappingMode.Pivot:
                         //Check if there is pivot snapping
@@ -434,7 +430,7 @@ namespace LinkDev.HologramManipulator.InputModule
             else
                 minDistance = Vector3.Distance(thisCuboid.Pivot, otherCuboids[m_PeerIndex.Value].Pivot);
 
-            if (minDistance <= m_SnappingDistance)
+            if (minDistance <= m_Settings.SnappingDistance)
             {
                 Displacement = otherCuboids[m_PeerIndex.Value].Pivot - thisCuboid.Pivot;
                 isSnapping = true;
@@ -465,9 +461,9 @@ namespace LinkDev.HologramManipulator.InputModule
 
             var thisFace = thisCuboid.Faces[thisFaceIndex.Value];
             var thatFace = thatAdjacentFace;
-            if (Face.CheckSnapping(thisFace, thatFace, m_SnappingDistance))
+            if (Face.CheckSnapping(thisFace, thatFace, m_Settings.SnappingDistance))
             {
-                if (Vector3.Distance(thisFace.ProjectedPivot, thatFace.ProjectedPivot) < m_SnappingDistance)
+                if (Vector3.Distance(thisFace.ProjectedPivot, thatFace.ProjectedPivot) < m_Settings.SnappingDistance)
                     Displacement = thatFace.ProjectedPivot - thisFace.ProjectedPivot;
                 else
                     Displacement = thatFace.GetProjectionVector(thisFace);
@@ -493,7 +489,7 @@ namespace LinkDev.HologramManipulator.InputModule
             float currentDistance, minDistance = float.MaxValue; int currentThisIndex, currentThatIndex;
             for (int i = 0; i < otherCuboids.Count; i++)
             {
-                currentDistance = Cuboid.GetClosedFaces(thisCuboid, otherCuboids[i], m_SnappingDistance, out currentThisIndex, out currentThatIndex);
+                currentDistance = Cuboid.GetClosedFaces(thisCuboid, otherCuboids[i], m_Settings.SnappingDistance, out currentThisIndex, out currentThatIndex);
                 if (currentDistance >= 0 && currentDistance < minDistance)
                 {
                     minDistance = currentDistance;
