@@ -611,8 +611,8 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 114159746930387338, guid: 6bf8952e3adfca94e8ef2935946786d7,
         type: 2}
-      propertyPath: UIScalingFactor
-      value: 0.05
+      propertyPath: EnableBaseDrawing
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 6bf8952e3adfca94e8ef2935946786d7, type: 2}

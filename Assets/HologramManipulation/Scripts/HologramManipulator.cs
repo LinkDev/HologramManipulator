@@ -580,36 +580,31 @@ namespace LinkDev.HologramManipulator
 
         private void PlaceBoundingBoxFor3DHologram()
         {
-            for (int i = 0, j = 0, x = 0, y = 0, z = 2; i < m_ScaleControllerInstances.Length; i++)
-            {
-                //First Pair of horizontal points {(0, 1), (2, 3), (4, 5), (6, 7)}
-                if (i % 2 == 0)
-                {
-                    m_BoundaryLines[j].DrawTube(m_BoundaryBox.ControllerPointsPosition[i], m_BoundaryBox.ControllerPointsPosition[i + 1], m_UIScaleFactor * m_ManipulationSettings.BoundaryBoxLineWidthFactor);
-                    SetTransfromValue(m_RotateControllerInstances[x].transform, m_BoundaryLines[j].transform.position, transform.rotation, m_UIScaleFactor);
-                    j++;
-                    x++;
-                }
+            var points = m_BoundaryBox.ControllerPointsPosition;
+            var lines = m_BoundaryLines;
+            var lineWidth = m_UIScaleFactor * m_ManipulationSettings.BoundaryBoxLineWidthFactor;
 
-                //Vertical Pairs { (0, 2), (1, 3), (4, 6), (5, 7)}
-                if (i % 4 < 2)
-                {
-                    m_BoundaryLines[j].DrawTube(m_BoundaryBox.ControllerPointsPosition[i], m_BoundaryBox.ControllerPointsPosition[i + 2], m_UIScaleFactor * m_ManipulationSettings.BoundaryBoxLineWidthFactor);
-                    //These are the vertical tube, so we draw the Y rotation controller in there center
-                    SetTransfromValue(m_RotateControllerInstances[y + 4].transform, m_BoundaryLines[j].transform.position, transform.rotation, m_UIScaleFactor);
-                    j++;
-                    y++;
-                }
+            //First Pair of horizontal points {(0, 1), (2, 3), (4, 5), (6, 7)}
+            lines[00].DrawTube(points[0], points[1], lineWidth);
+            lines[01].DrawTube(points[2], points[3], lineWidth);
+            lines[02].DrawTube(points[4], points[5], lineWidth);
+            lines[03].DrawTube(points[6], points[7], lineWidth);
 
-                // Second direction of horizontal Pairs { (0, 4), (1, 5), (2, 6), (3, 7)}
-                if (i < 4)
-                {
-                    m_BoundaryLines[j].DrawTube(m_BoundaryBox.ControllerPointsPosition[i], m_BoundaryBox.ControllerPointsPosition[i + 4], m_UIScaleFactor * m_ManipulationSettings.BoundaryBoxLineWidthFactor);
-                    SetTransfromValue(m_RotateControllerInstances[z + 8].transform, m_BoundaryLines[j].transform.position, transform.rotation, m_UIScaleFactor);
-                    j++;
-                    z = ++z % 4;
-                }
-            }
+            //Vertical Pairs {(0, 2), (1, 3), (4, 6), (5, 7)}
+            lines[04].DrawTube(points[0], points[2], lineWidth);
+            lines[05].DrawTube(points[1], points[3], lineWidth);
+            lines[06].DrawTube(points[4], points[6], lineWidth);
+            lines[07].DrawTube(points[5], points[7], lineWidth);
+
+            // Second direction of horizontal Pairs {(0, 4), (1, 5), (2, 6), (3, 7)}
+            lines[08].DrawTube(points[0], points[4], lineWidth);
+            lines[09].DrawTube(points[1], points[5], lineWidth);
+            lines[10].DrawTube(points[2], points[6], lineWidth);
+            lines[11].DrawTube(points[3], points[7], lineWidth);
+
+            for (int i = 0; i < lines.Length; i++)
+                SetTransfromValue(m_RotateControllerInstances[i].transform, lines[i].transform.position, transform.rotation, m_UIScaleFactor);
+
         }
         
         /// <summary>
