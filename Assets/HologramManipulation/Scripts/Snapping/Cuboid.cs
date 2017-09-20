@@ -193,15 +193,5 @@ namespace LinkDev.HologramManipulator.SnappingModule
         {
             m_Target.HighlightFace(target.CornerPoints, Color.red, Color.cyan);
         }
-
-        public void DebugDraw()
-        {
-            Faces[0].DebugDraw(Color.green);
-            Faces[1].DebugDraw(Color.green);
-            Faces[2].DebugDraw(Color.green);
-            Faces[3].DebugDraw(Color.green);
-            Faces[4].DebugDraw(Color.green);
-            Faces[5].DebugDraw(Color.green);
-        }
     }
 }

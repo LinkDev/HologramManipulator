@@ -15,7 +15,7 @@ namespace LinkDev.HologramManipulator.InputModule
         private Transform HostTransform;
         
         /// <summary>
-        /// The speed of change of the object scale determined from <see cref="ManipulationManager.ScaleFactor"/> 
+        /// The speed of change of the object scale determined from <see cref="ManipulatorSettings.ScaleFactor"/> 
         /// </summary>
         private float ScaleFactor;
         

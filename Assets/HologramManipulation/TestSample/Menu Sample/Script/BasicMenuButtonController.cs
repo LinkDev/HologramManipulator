@@ -22,7 +22,7 @@ public class BasicMenuButtonController : MonoBehaviour, IInputClickHandler
                 Destroy(HologramTarget);
                 break;
             case ButtonAction.Hide:
-                HologramTarget.GetComponent<HologramController>().SetHologramState(HologramState.Inactive);
+                HologramTarget.GetComponent<HologramManipulator>().SetHologramState(HologramState.Inactive);
                 break;
         }
     }
