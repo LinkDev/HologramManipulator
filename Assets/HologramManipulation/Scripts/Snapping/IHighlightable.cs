@@ -7,5 +7,5 @@ public interface IHighlightable {
     void ShowHighlight();
     void HideHighlight();
     void ChangeHighlightColor(Color newColor);
-    void HighlightFace(Vector3[] pointsArray, Color highlightFaceColor, Color normalFaceColor);
+    void HighlightFace(Vector3[] pointsArray);
 }

@@ -45,6 +45,9 @@ namespace LinkDev.HologramManipulator
         [Tooltip("Scale factor of the boundary box edges relative to regular controllers")]
         public float BoundaryBoxLineWidthFactor = 0.08f;
 
+        public Color BoundingBoxColor = Color.cyan;
+        public Color HighlightColor = Color.red;
+
         [Header("Optional components")]
         public SnappingTarget SnappingTarget = SnappingTarget.Off;
         public SnappingMode SnappingMode = SnappingMode.PivotAndFaces;

@@ -468,7 +468,7 @@ namespace LinkDev.HologramManipulator.InputModule
                 else
                     Displacement = thatFace.GetProjectionVector(thisFace);
 
-                thisCuboid.HighlightFace(thisFace, Color.red, Color.cyan);
+                thisCuboid.HighlightFace(thisFace);
                 isSnapping = true;
                 return true;
             }

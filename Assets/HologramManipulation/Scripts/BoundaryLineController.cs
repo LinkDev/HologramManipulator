@@ -17,7 +17,7 @@ namespace LinkDev.HologramManipulator
         }
         private MeshRenderer m_Renderer;
         // Use this for initialization
-        void Start()
+        private void Awake()
         {
             m_Renderer = GetComponentInChildren<MeshRenderer>();
         }

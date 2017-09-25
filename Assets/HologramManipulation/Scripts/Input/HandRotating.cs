@@ -23,13 +23,6 @@ namespace LinkDev.HologramManipulator.InputModule
                                 , IInputClickHandler
 #endif
     {
-        private Transform HostTransform;
-
-        /// <summary>
-        /// The speed of change of the object rotation determined from <see cref="ManipulatorSettings.RotateFactor"/> 
-        /// </summary>
-        private float RotateFactor;
-
         public event Action RotateEventStarted;
         public event Action RotateEventEnded;
 
@@ -44,6 +37,20 @@ namespace LinkDev.HologramManipulator.InputModule
         private float cumulativeChange = 0, oldCumulativeDelta = 0;
         public bool IsManipulating = false;
         public int ID;
+        public Color RenderingColor
+        {
+            set
+            {
+                m_Renderer.material.color = value;
+            }
+        }
+
+        private Transform HostTransform;
+        /// <summary>
+        /// The speed of change of the object rotation determined from <see cref="ManipulatorSettings.RotateFactor"/> 
+        /// </summary>
+        private float RotateFactor;
+        private Renderer m_Renderer;
 
         public void Init(Action rotateEventStartedHandler, Action rotateEventEndedHandler, Transform targetTransform, float rotateFactor)
         {
@@ -51,6 +58,7 @@ namespace LinkDev.HologramManipulator.InputModule
             RotateEventEnded += rotateEventEndedHandler;
             HostTransform = targetTransform;
             RotateFactor = rotateFactor;
+            m_Renderer = GetComponent<Renderer>();
         }
 
         void IManipulationHandler.OnManipulationStarted(ManipulationEventData eventData)

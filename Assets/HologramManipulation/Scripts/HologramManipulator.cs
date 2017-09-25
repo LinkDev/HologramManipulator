@@ -270,6 +270,7 @@ namespace LinkDev.HologramManipulator
                 var currentScaleController = Instantiate(m_ManipulationSettings.ScaleControllerPrefab, m_ManipulatorsContainer.transform).GetComponentInChildren<HandScaling>();
                 currentScaleController.Init(ScaleStartedEventHandler, ScaleEndedEventHandler, transform, m_ManipulationSettings.ScaleFactor, i, (i + 2) % 4, m_MinScaleFactor, m_MaxScaleFactor);
                 m_ScaleControllerInstances[i] = (currentScaleController);
+                m_ScaleControllerInstances[i].RenderingColor = m_ManipulationSettings.BoundingBoxColor;
 
                 var currentRotateController = Instantiate(m_ManipulationSettings.RotateControllerPrefab, m_ManipulatorsContainer.transform).GetComponentInChildren<HandRotating>();
                 currentRotateController.Init(RotateStartedEventHandler, RotateEndedEventHandler, transform, m_ManipulationSettings.RotateFactor);
@@ -278,8 +279,10 @@ namespace LinkDev.HologramManipulator
                     m_RotateControllerInstances[i].RotationAxis = Axis.X;
                 else
                     m_RotateControllerInstances[i].RotationAxis = Axis.Y;
+                m_RotateControllerInstances[i].RenderingColor = m_ManipulationSettings.BoundingBoxColor;
 
                 m_BoundaryLines[i] = Instantiate(m_ManipulationSettings.BoxLinePrefab, m_ManipulatorsContainer.transform).GetComponent<BoundaryLineController>();
+                m_BoundaryLines[i].RenderingColor = m_ManipulationSettings.BoundingBoxColor;
             }
 
         }
@@ -292,6 +295,7 @@ namespace LinkDev.HologramManipulator
                     var currentScaleController = Instantiate(m_ManipulationSettings.ScaleControllerPrefab, m_ManipulatorsContainer.transform).GetComponentInChildren<HandScaling>();
                     currentScaleController.Init(ScaleStartedEventHandler, ScaleEndedEventHandler, transform, m_ManipulationSettings.ScaleFactor, i, 7 - i, m_MinScaleFactor, m_MaxScaleFactor);
                     m_ScaleControllerInstances[i] = (currentScaleController);
+                    m_ScaleControllerInstances[i].RenderingColor = m_ManipulationSettings.BoundingBoxColor;
                 }
                 var currentRotateController = Instantiate(m_ManipulationSettings.RotateControllerPrefab, m_ManipulatorsContainer.transform).GetComponentInChildren<HandRotating>();
                 currentRotateController.Init(RotateStartedEventHandler, RotateEndedEventHandler, transform, m_ManipulationSettings.RotateFactor);
@@ -302,7 +306,10 @@ namespace LinkDev.HologramManipulator
                     m_RotateControllerInstances[i].RotationAxis = Axis.Y;
                 else
                     m_RotateControllerInstances[i].RotationAxis = Axis.Z;
+
+                m_RotateControllerInstances[i].RenderingColor = m_ManipulationSettings.BoundingBoxColor;
                 m_BoundaryLines[i] = Instantiate(m_ManipulationSettings.BoxLinePrefab, m_ManipulatorsContainer.transform).GetComponent<BoundaryLineController>(); ;
+                m_BoundaryLines[i].RenderingColor = m_ManipulationSettings.BoundingBoxColor;
             }
 
         }
@@ -348,13 +355,13 @@ namespace LinkDev.HologramManipulator
         {
             isMenuEnabled = false;
             isControllersEnabled = false;
-            isBoundaryEnabled = true;
+            isBoundaryBoxEnabled = true;
         }
         private void SetHologramStateFlagsForActive()
         {
             isMenuEnabled = true;
             isControllersEnabled = true;
-            isBoundaryEnabled = true;
+            isBoundaryBoxEnabled = true;
         }
 
         private void SetControllersState ()
@@ -778,7 +785,7 @@ namespace LinkDev.HologramManipulator
                     instance.gameObject.SetActive(false);
         }
 
-        void IHighlightable.HighlightFace(Vector3[] pointsArray, Color highlightFaceColor, Color normalFaceColor)
+        void IHighlightable.HighlightFace(Vector3[] pointsArray)
         {
             if (pointsArray.Length != 4)
                 throw new ArgumentException();
@@ -789,14 +796,14 @@ namespace LinkDev.HologramManipulator
                 for (int j = 0; j < points.Count; j++)
                     if (lines[i].CheckMatchingLine(points[j], points[(j + 1) % points.Count]))
                     {
-                        lines[i].RenderingColor = highlightFaceColor;
+                        lines[i].RenderingColor = m_ManipulationSettings.HighlightColor;
                         lines.RemoveAt(i--);
                         break;
                         //points.RemoveAt(j--);
                     }
             }
             for (int i = 0; i < lines.Count; i++)
-                lines[i].RenderingColor = normalFaceColor;
+                lines[i].RenderingColor = m_ManipulationSettings.BoundingBoxColor;
         }
         #endregion
 

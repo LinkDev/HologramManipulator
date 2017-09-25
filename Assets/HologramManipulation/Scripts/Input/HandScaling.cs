@@ -12,16 +12,6 @@ namespace LinkDev.HologramManipulator.InputModule
                                 , IInputClickHandler
 #endif
     {
-        private Transform HostTransform;
-        
-        /// <summary>
-        /// The speed of change of the object scale determined from <see cref="ManipulatorSettings.ScaleFactor"/> 
-        /// </summary>
-        private float ScaleFactor;
-        
-        private float m_MinScaleFactor;
-        private float m_MaxScaleFactor;
-
         public int id;
         
         /// <summary>
@@ -32,7 +22,22 @@ namespace LinkDev.HologramManipulator.InputModule
         public event Action<int> ScaleEventStarted;
         public event Action ScaleEventEnded;
         public Renderer ElementRenderer;
-        public bool IsManipulating = false;
+        public bool IsManipulating = false; public Color RenderingColor
+        {
+            set
+            {
+                m_Renderer.material.color = value;
+            }
+        }
+
+        private Transform HostTransform;
+        /// <summary>
+        /// The speed of change of the object scale determined from <see cref="ManipulatorSettings.ScaleFactor"/> 
+        /// </summary>
+        private float ScaleFactor;
+        private float m_MinScaleFactor;
+        private float m_MaxScaleFactor;
+        private Renderer m_Renderer;
 
         public void Init(Action<int> ScaleEventStartedHandler, Action ScaleEventEndedHandler, Transform targetTransform, float scalingFactor, int ID, int targetID, float minScaleFactor, float maxScaleFactor)
         {
@@ -44,6 +49,7 @@ namespace LinkDev.HologramManipulator.InputModule
             AdjacentPointID = targetID;
             m_MinScaleFactor = minScaleFactor;
             m_MaxScaleFactor = maxScaleFactor;
+            m_Renderer = GetComponent<Renderer>();
         }
 
         public void Hide()

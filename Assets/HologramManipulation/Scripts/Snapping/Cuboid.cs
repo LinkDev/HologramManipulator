@@ -189,9 +189,9 @@ namespace LinkDev.HologramManipulator.SnappingModule
                 m_Target.ChangeHighlightColor(newColor);
         }
 
-        public void HighlightFace(Face target, Color highlightFaceColor, Color normalFaceColor)
+        public void HighlightFace(Face target)
         {
-            m_Target.HighlightFace(target.CornerPoints, Color.red, Color.cyan);
+            m_Target.HighlightFace(target.CornerPoints);
         }
     }
 }
