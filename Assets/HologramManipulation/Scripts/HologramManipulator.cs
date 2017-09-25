@@ -44,6 +44,14 @@ namespace LinkDev.HologramManipulator
 
         private float m_UIScaleFactor;
 
+        //Flag to represent the current state of instances associated with the hologram
+        bool isBaseEnabled = false;
+        bool isMenuEnabled = false;
+        bool isControllersEnabled = false;
+        bool isBoundaryBoxEnabled = false;
+        bool isPivotEnabled = false;
+
+
         private ManipulatorSettings m_ManipulationSettings;
         /// <summary>
         /// Parent of all controllers of the hologram to contain all of them in a tidier way
@@ -307,18 +315,17 @@ namespace LinkDev.HologramManipulator
         /// <param name="value">Current state of the hologram</param>
         public void SetHologramState(HologramState value)
         {
-            bool isBaseEnabled = false, isMenuEnabled = false, isControllersEnabled = false, isBoundaryEnabled = false, isPivotEnabled;
-
+            
             switch (value)
             {
                 case HologramState.Inactive:
-                    SetHologramStateFlagsForInactive(out isMenuEnabled, out isControllersEnabled, out isBoundaryEnabled);
+                    SetHologramStateFlagsForInactive();
                     break;
                 case HologramState.Focused:
-                    SetHologramStateFlagsForFocused(out isMenuEnabled, out isControllersEnabled, out isBoundaryEnabled);
+                    SetHologramStateFlagsForFocused();
                     break;
                 case HologramState.Active:
-                    SetHologramStateFlagsForActive(out isMenuEnabled, out isControllersEnabled, out isBoundaryEnabled);
+                    SetHologramStateFlagsForActive();
                     break;
                 
             }
@@ -326,31 +333,31 @@ namespace LinkDev.HologramManipulator
             isPivotEnabled = (m_ManipulationSettings != null) && m_ManipulationSettings.EnablePivotDrawing;
             isBaseEnabled &= (m_ManipulationSettings != null) && m_ManipulationSettings.EnableBaseDrawing;
 
-            SetControllersState(isBaseEnabled, isMenuEnabled, isControllersEnabled, isBoundaryEnabled, isPivotEnabled);
+            SetControllersState();
            
             m_HologramState = value;
         }
 
-        private void SetHologramStateFlagsForInactive(out bool isMenuEnabled, out bool isControllersEnabled, out bool isBoundaryEnabled)
+        private void SetHologramStateFlagsForInactive()
         {
             isMenuEnabled = false;
             isControllersEnabled = false;
-            isBoundaryEnabled = false;
+            isBoundaryBoxEnabled = false;
         }
-        private void SetHologramStateFlagsForFocused(out bool isMenuEnabled, out bool isControllersEnabled, out bool isBoundaryEnabled)
+        private void SetHologramStateFlagsForFocused()
         {
             isMenuEnabled = false;
             isControllersEnabled = false;
             isBoundaryEnabled = true;
         }
-        private void SetHologramStateFlagsForActive(out bool isMenuEnabled, out bool isControllersEnabled, out bool isBoundaryEnabled)
+        private void SetHologramStateFlagsForActive()
         {
             isMenuEnabled = true;
             isControllersEnabled = true;
             isBoundaryEnabled = true;
         }
 
-        private void SetControllersState (bool isBaseEnabled, bool isMenuEnabled, bool isControllersEnabled, bool isBoundaryEnabled, bool isPivotEnabled)
+        private void SetControllersState ()
         {
             if (m_MenuInstance)
                 m_MenuInstance.SetActive(isMenuEnabled);
@@ -364,7 +371,7 @@ namespace LinkDev.HologramManipulator
                 m_TranslateControllerInstance.enabled = isControllersEnabled;
             foreach (var instance in m_BoundaryLines)
                 if (instance)
-                    instance.gameObject.SetActive(isBoundaryEnabled);
+                    instance.gameObject.SetActive(isBoundaryBoxEnabled);
 
             if (m_PivotInstance)
                 m_PivotInstance.SetActive(isPivotEnabled);
@@ -488,7 +495,6 @@ namespace LinkDev.HologramManipulator
 
             float scaleFactor = 1;
             var maxBoundSide = Mathf.Max(combinedBounds.size.x, combinedBounds.size.y, combinedBounds.size.z);
-            //var minBoundSize = Mathf.Min(combinedBounds.size.x, combinedBounds.size.y, combinedBounds.size.z);
             m_MinScaleFactor = m_ManipulationSettings.MinObjectSize / maxBoundSide;
             m_MaxScaleFactor = m_ManipulationSettings.MaxObjectSize / maxBoundSide;
             if (maxBoundSide < m_ManipulationSettings.MinObjectSize)
