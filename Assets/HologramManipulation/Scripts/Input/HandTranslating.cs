@@ -38,11 +38,6 @@ namespace LinkDev.HologramManipulator.InputModule
 
         private Transform HostTransform;
         
-        /// <summary>
-        /// Scale by which hand movement in z is multipled to move the dragged object, determined 
-        /// from <see cref="ManipulatorSettings.ScaleFactor"/> 
-        /// </summary>
-        public float DistanceScale = 2f;
 
         public enum RotationModeEnum
         {
@@ -104,15 +99,13 @@ namespace LinkDev.HologramManipulator.InputModule
         }
         #endregion
 
-        public void Init(Action startedDragging, Action stoppedDragging, RotationModeEnum rotationMode, bool isDraggingEnabled, HologramManipulator hologram, ManipulatorSettings manipulationSettings)
+        public void Init(Transform target, ManipulatorSettings manipulationSettings)
         {
-            StartedDragging += startedDragging;
-            StoppedDragging += stoppedDragging;
-            RotationMode = rotationMode;
-            IsDraggingEnabled = isDraggingEnabled;
-            DistanceScale = manipulationSettings.TranslateFactor;
+            RotationMode = RotationModeEnum.LockObjectRotation;
+            IsDraggingEnabled = true;
+            
             m_Settings = manipulationSettings;
-            m_BoundaryController = GetComponent<HologramManipulator>();
+            m_BoundaryController = target.GetComponent<HologramManipulator>();
         }
 
         private void Start()
@@ -250,7 +243,7 @@ namespace LinkDev.HologramManipulator.InputModule
             float currenthandDistance = Vector3.Magnitude(newHandPosition - pivotPosition);
 
             float distanceRatio = currenthandDistance / handRefDistance;
-            float distanceOffset = distanceRatio > 0 ? (distanceRatio - 1f) * DistanceScale : 0;
+            float distanceOffset = distanceRatio > 0 ? (distanceRatio - 1f) * m_Settings.TranslateFactor : 0;
             float targetDistance = objRefDistance + distanceOffset;
 
             draggingPosition = pivotPosition + (targetDirection * targetDistance);

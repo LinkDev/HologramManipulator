@@ -27,11 +27,16 @@ namespace LinkDev.HologramManipulator
         public GameObject ScaleControllerPrefab;
         public GameObject BoxLinePrefab;
 
+
+        [Tooltip("Rotating is done in increments to make rotation less cumbersome you control the threshold of rotation here")]
+        public float RotationIncrement = 10f;
+
         public float ScaleFactor = 8f;
         public float RotateFactor = 800;
         public float TranslateFactor = 2;
-        public float MinObjectSize = 0.2f;
+        public float MinObjectSize = 0.2f ;
         public float MaxObjectSize = 3;
+
 
         [Header ("UI Elements")]
         [Tooltip("Minimum size of the hologram before the UI stops scaling down")]
@@ -45,7 +50,8 @@ namespace LinkDev.HologramManipulator
         [Tooltip("Scale factor of the boundary box edges relative to regular controllers")]
         public float BoundaryBoxLineWidthFactor = 0.08f;
 
-        public Color BoundingBoxColor = Color.cyan;
+        public Color BoxDefaultColor = Color.cyan;
+        public Color ActiveControllerColor = Color.yellow;
         public Color HighlightColor = Color.red;
 
         [Header("Optional components")]
@@ -85,6 +91,9 @@ namespace LinkDev.HologramManipulator
 
         public void Awake()
         {
+            //Kind of hacky solution to find the default settings, since I don't like bloating existing projects
+            //with tags and such, I try to find a "naked" gameObject that has ManipulationSettings and consider
+            //that the default one
             if (m_DefaultSetting == null && GetComponent<HologramManipulator>() == null)
                 m_DefaultSetting = this;
         }

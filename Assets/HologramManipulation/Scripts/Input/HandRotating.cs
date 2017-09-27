@@ -10,14 +10,9 @@ using System.Collections;
 namespace LinkDev.HologramManipulator.InputModule
 {
     /// <summary>
-    /// Component that allows dragging an object with your hand on HoloLens.
-    /// Dragging is done by calculating the angular delta and z-delta between the current and previous hand positions,
-    /// and then repositioning the object based on that.
+    /// Component that allows rotating an object with your hand on HoloLens.
     /// </summary>
     /// 
-    
-
-    #region WithManipulation
     public class HandRotating : MonoBehaviour, IManipulationHandler
 #if UNITY_EDITOR
                                 , IInputClickHandler
@@ -29,14 +24,9 @@ namespace LinkDev.HologramManipulator.InputModule
         public Renderer ElementRenderer;
         public Axis RotationAxis = Axis.Y;
         public Axis ManipulationAxis;
-        
-        /// <summary>
-        /// Rotating is done in increments to make rotation less cumbersome you control the threshold of rotation here 
-        /// </summary>
-        private float AngleIncrement = 10;
-        private float cumulativeChange = 0, oldCumulativeDelta = 0;
+
         public bool IsManipulating = false;
-        public int ID;
+
         public Color RenderingColor
         {
             set
@@ -46,19 +36,19 @@ namespace LinkDev.HologramManipulator.InputModule
         }
 
         private Transform HostTransform;
-        /// <summary>
-        /// The speed of change of the object rotation determined from <see cref="ManipulatorSettings.RotateFactor"/> 
-        /// </summary>
-        private float RotateFactor;
         private Renderer m_Renderer;
+        private ManipulatorSettings m_Settings;
 
-        public void Init(Action rotateEventStartedHandler, Action rotateEventEndedHandler, Transform targetTransform, float rotateFactor)
+
+        private float cumulativeChange = 0, oldCumulativeDelta = 0;
+
+        public void Init(Transform targetTransform, ManipulatorSettings settings)
         {
-            RotateEventStarted += rotateEventStartedHandler;
-            RotateEventEnded += rotateEventEndedHandler;
             HostTransform = targetTransform;
-            RotateFactor = rotateFactor;
+            m_Settings = settings;
+
             m_Renderer = GetComponent<Renderer>();
+            RenderingColor = settings.BoxDefaultColor;
         }
 
         void IManipulationHandler.OnManipulationStarted(ManipulationEventData eventData)
@@ -66,7 +56,10 @@ namespace LinkDev.HologramManipulator.InputModule
             InputManager.Instance.PushModalInputHandler(gameObject);
             IsManipulating = true;
             cumulativeChange = 0;
-            RotateEventStarted();
+            RenderingColor = m_Settings.ActiveControllerColor;
+            if (RotateEventStarted != null)
+                RotateEventStarted();
+
             if (ManipulationAxis == Axis.X)
                 oldCumulativeDelta = eventData.CumulativeDelta.x;
             else
@@ -79,22 +72,22 @@ namespace LinkDev.HologramManipulator.InputModule
         {
             if (ManipulationAxis == Axis.X)
             {
-                cumulativeChange += (eventData.CumulativeDelta.x - oldCumulativeDelta) * RotateFactor;
+                cumulativeChange += (eventData.CumulativeDelta.x - oldCumulativeDelta) * m_Settings.RotateFactor;
                 oldCumulativeDelta = eventData.CumulativeDelta.x;
             }
             else
             {
-                cumulativeChange += (eventData.CumulativeDelta.y - oldCumulativeDelta) * RotateFactor;
+                cumulativeChange += (eventData.CumulativeDelta.y - oldCumulativeDelta) * m_Settings.RotateFactor;
                 oldCumulativeDelta = eventData.CumulativeDelta.y;
             }
 
-            if (Mathf.Abs(cumulativeChange / AngleIncrement) > 1)
+            if (Mathf.Abs(cumulativeChange)  > m_Settings.RotationIncrement)
             {
                 Vector3 d = HostTransform.position - Camera.main.transform.position;
                 float sign = Vector3.Dot(Vector3.forward, d);
                 sign = (sign < 0) ? 1 : -1;
 
-                HostTransform.RotateAround(HostTransform.position, GetRotationAxis(), AngleIncrement * Mathf.Sign(cumulativeChange) * sign);
+                HostTransform.RotateAround(HostTransform.position, GetRotationAxis(), m_Settings.RotationIncrement * Mathf.Sign(cumulativeChange) * sign);
                 cumulativeChange = 0;
             }
         }
@@ -180,7 +173,9 @@ namespace LinkDev.HologramManipulator.InputModule
         {
             IsManipulating = false;
             InputManager.Instance.PopModalInputHandler();
-            RotateEventEnded();
+            RenderingColor = m_Settings.BoxDefaultColor;
+            if (RotateEventEnded != null)
+                RotateEventEnded();
         }
 
         public void Hide()
@@ -205,5 +200,4 @@ namespace LinkDev.HologramManipulator.InputModule
         }
 #endif
     }
-    #endregion
 }

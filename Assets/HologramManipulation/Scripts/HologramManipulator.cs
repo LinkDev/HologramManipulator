@@ -250,7 +250,7 @@ namespace LinkDev.HologramManipulator
 
             //Init Translate controllers
             m_TranslateControllerInstance = gameObject.AddComponent<HandTranslating>();
-            m_TranslateControllerInstance.Init(DragStartedEventHandler, DragEndedEventHandler, HandTranslating.RotationModeEnum.LockObjectRotation, true, this, m_ManipulationSettings);
+            m_TranslateControllerInstance.Init(transform, m_ManipulationSettings);
 
             //Init Rotation and Scale controllers
             switch (HologramType)
@@ -267,51 +267,76 @@ namespace LinkDev.HologramManipulator
         {
             for (int i = 0; i < 4; i++)
             {
-                var currentScaleController = Instantiate(m_ManipulationSettings.ScaleControllerPrefab, m_ManipulatorsContainer.transform).GetComponentInChildren<HandScaling>();
-                currentScaleController.Init(ScaleStartedEventHandler, ScaleEndedEventHandler, transform, m_ManipulationSettings.ScaleFactor, i, (i + 2) % 4, m_MinScaleFactor, m_MaxScaleFactor);
-                m_ScaleControllerInstances[i] = (currentScaleController);
-                m_ScaleControllerInstances[i].RenderingColor = m_ManipulationSettings.BoundingBoxColor;
+                m_ScaleControllerInstances[i] = Instantiate(m_ManipulationSettings.ScaleControllerPrefab, m_ManipulatorsContainer.transform).GetComponentInChildren<HandScaling>();
+                m_ScaleControllerInstances[i].Init(transform, m_ManipulationSettings, m_MinScaleFactor, m_MaxScaleFactor);
+                m_ScaleControllerInstances[i].ScaleEventStarted += ScaleStartedEventHandler;
+                m_ScaleControllerInstances[i].ScaleEventEnded += ScaleEndedEventHandler;
 
-                var currentRotateController = Instantiate(m_ManipulationSettings.RotateControllerPrefab, m_ManipulatorsContainer.transform).GetComponentInChildren<HandRotating>();
-                currentRotateController.Init(RotateStartedEventHandler, RotateEndedEventHandler, transform, m_ManipulationSettings.RotateFactor);
-                m_RotateControllerInstances[i] = (currentRotateController);
-                if (i % 2 == 1)
-                    m_RotateControllerInstances[i].RotationAxis = Axis.X;
-                else
-                    m_RotateControllerInstances[i].RotationAxis = Axis.Y;
-                m_RotateControllerInstances[i].RenderingColor = m_ManipulationSettings.BoundingBoxColor;
+                m_RotateControllerInstances[i] = Instantiate(m_ManipulationSettings.RotateControllerPrefab, m_ManipulatorsContainer.transform).GetComponentInChildren<HandRotating>();
+                m_RotateControllerInstances[i].Init(transform, m_ManipulationSettings);
+                m_RotateControllerInstances[i].RotateEventStarted += RotateStartedEventHandler;
+                m_RotateControllerInstances[i].RotateEventEnded += RotateEndedEventHandler;
 
                 m_BoundaryLines[i] = Instantiate(m_ManipulationSettings.BoxLinePrefab, m_ManipulatorsContainer.transform).GetComponent<BoundaryLineController>();
-                m_BoundaryLines[i].RenderingColor = m_ManipulationSettings.BoundingBoxColor;
+                m_BoundaryLines[i].RenderingColor = m_ManipulationSettings.BoxDefaultColor;
             }
+
+            m_ScaleControllerInstances[0].SetIDAndAdjacentID(0, 2);
+            m_ScaleControllerInstances[1].SetIDAndAdjacentID(1, 3);
+            m_ScaleControllerInstances[2].SetIDAndAdjacentID(2, 0);
+            m_ScaleControllerInstances[3].SetIDAndAdjacentID(3, 1);
+
+            m_RotateControllerInstances[0].RotationAxis = Axis.Y;
+            m_RotateControllerInstances[1].RotationAxis = Axis.X;
+            m_RotateControllerInstances[2].RotationAxis = Axis.Y;
+            m_RotateControllerInstances[3].RotationAxis = Axis.X;
+            
 
         }
         private void Init3DHologramControllers()
         {
+            for (int i = 0; i < 8; i++)
+            {
+                var instance = Instantiate(m_ManipulationSettings.ScaleControllerPrefab, m_ManipulatorsContainer.transform);
+                m_ScaleControllerInstances[i] = instance.GetComponentInChildren<HandScaling>();
+
+                m_ScaleControllerInstances[i].Init(transform, m_ManipulationSettings, m_MinScaleFactor, m_MaxScaleFactor);
+                m_ScaleControllerInstances[i].ScaleEventStarted += ScaleStartedEventHandler;
+                m_ScaleControllerInstances[i].ScaleEventEnded += ScaleEndedEventHandler;
+            }
+            m_ScaleControllerInstances[0].SetIDAndAdjacentID(0, 7);
+            m_ScaleControllerInstances[1].SetIDAndAdjacentID(1, 6);
+            m_ScaleControllerInstances[2].SetIDAndAdjacentID(2, 5);
+            m_ScaleControllerInstances[3].SetIDAndAdjacentID(3, 4);
+            m_ScaleControllerInstances[4].SetIDAndAdjacentID(4, 3);
+            m_ScaleControllerInstances[5].SetIDAndAdjacentID(5, 2);
+            m_ScaleControllerInstances[6].SetIDAndAdjacentID(6, 1);
+            m_ScaleControllerInstances[7].SetIDAndAdjacentID(7, 0);
+
             for (int i = 0; i < 12; i++)
             {
-                if (i < 8)
-                {
-                    var currentScaleController = Instantiate(m_ManipulationSettings.ScaleControllerPrefab, m_ManipulatorsContainer.transform).GetComponentInChildren<HandScaling>();
-                    currentScaleController.Init(ScaleStartedEventHandler, ScaleEndedEventHandler, transform, m_ManipulationSettings.ScaleFactor, i, 7 - i, m_MinScaleFactor, m_MaxScaleFactor);
-                    m_ScaleControllerInstances[i] = (currentScaleController);
-                    m_ScaleControllerInstances[i].RenderingColor = m_ManipulationSettings.BoundingBoxColor;
-                }
-                var currentRotateController = Instantiate(m_ManipulationSettings.RotateControllerPrefab, m_ManipulatorsContainer.transform).GetComponentInChildren<HandRotating>();
-                currentRotateController.Init(RotateStartedEventHandler, RotateEndedEventHandler, transform, m_ManipulationSettings.RotateFactor);
-                m_RotateControllerInstances[i] = (currentRotateController);
-                if (i < 4)
-                    m_RotateControllerInstances[i].RotationAxis = Axis.X;
-                else if (i < 8)
-                    m_RotateControllerInstances[i].RotationAxis = Axis.Y;
-                else
-                    m_RotateControllerInstances[i].RotationAxis = Axis.Z;
+                var instance = Instantiate(m_ManipulationSettings.RotateControllerPrefab, m_ManipulatorsContainer.transform);
+                m_RotateControllerInstances[i] = instance.GetComponentInChildren<HandRotating>();
+                m_RotateControllerInstances[i].Init(transform, m_ManipulationSettings);
+                m_RotateControllerInstances[i].RotateEventStarted += RotateStartedEventHandler;
+                m_RotateControllerInstances[i].RotateEventEnded += RotateEndedEventHandler;
 
-                m_RotateControllerInstances[i].RenderingColor = m_ManipulationSettings.BoundingBoxColor;
-                m_BoundaryLines[i] = Instantiate(m_ManipulationSettings.BoxLinePrefab, m_ManipulatorsContainer.transform).GetComponent<BoundaryLineController>(); ;
-                m_BoundaryLines[i].RenderingColor = m_ManipulationSettings.BoundingBoxColor;
+                m_BoundaryLines[i] = Instantiate(m_ManipulationSettings.BoxLinePrefab, m_ManipulatorsContainer.transform).GetComponent<BoundaryLineController>();
+                m_BoundaryLines[i].RenderingColor = m_ManipulationSettings.BoxDefaultColor;
             }
 
+            m_RotateControllerInstances[00].RotationAxis = Axis.X;
+            m_RotateControllerInstances[01].RotationAxis = Axis.X;
+            m_RotateControllerInstances[02].RotationAxis = Axis.X;
+            m_RotateControllerInstances[03].RotationAxis = Axis.X;
+            m_RotateControllerInstances[04].RotationAxis = Axis.Y;
+            m_RotateControllerInstances[05].RotationAxis = Axis.Y;
+            m_RotateControllerInstances[06].RotationAxis = Axis.Y;
+            m_RotateControllerInstances[07].RotationAxis = Axis.Y;
+            m_RotateControllerInstances[08].RotationAxis = Axis.Z;
+            m_RotateControllerInstances[09].RotationAxis = Axis.Z;
+            m_RotateControllerInstances[10].RotationAxis = Axis.Z;
+            m_RotateControllerInstances[11].RotationAxis = Axis.Z;
         }
         #endregion
 
@@ -803,7 +828,7 @@ namespace LinkDev.HologramManipulator
                     }
             }
             for (int i = 0; i < lines.Count; i++)
-                lines[i].RenderingColor = m_ManipulationSettings.BoundingBoxColor;
+                lines[i].RenderingColor = m_ManipulationSettings.BoxDefaultColor;
         }
         #endregion
 

@@ -1,4 +1,4 @@
 ﻿namespace LinkDev.HologramManipulator
 {
-    public enum Axis { X, Y, Z };
+    public enum Axis { X, Y, Z, Free };
 }

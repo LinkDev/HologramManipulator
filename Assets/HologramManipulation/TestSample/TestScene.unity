@@ -150,6 +150,34 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &162658790
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 162658791}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &162658791
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 162658790}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.85516393, y: -0.30134493, z: 15.154257}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 13
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &167565320
 GameObject:
   m_ObjectHideFlags: 0
@@ -806,6 +834,7 @@ GameObject:
   m_Component:
   - component: {fileID: 800169697}
   - component: {fileID: 800169696}
+  - component: {fileID: 800169698}
   m_Layer: 0
   m_Name: 'Hologram #2 (2)'
   m_TagString: Untagged
@@ -839,6 +868,50 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 10
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &800169698
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 800169695}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4784de6befdb31469089fe1745516dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  RotateControllerPrefab: {fileID: 1963797349280120, guid: 1c365955a9455824ab3d00e726ed9f7c,
+    type: 2}
+  ScaleControllerPrefab: {fileID: 1768989509447430, guid: 943be141291e4fe49acfda0ecd1fb14e,
+    type: 2}
+  BoxLinePrefab: {fileID: 1346323259724296, guid: 068f05e8f76b7ae47886ddafbd2ec8e8,
+    type: 2}
+  ScaleFactor: 8
+  RotateFactor: 800
+  TranslateFactor: 2
+  MinObjectSize: {x: 0.2, y: 0.2, z: 0.2}
+  MaxObjectSize: {x: 3, y: 3, z: 3}
+  HologramMinimumSizeForUIScaling: 0.5
+  UIScalingFactor: 0.05
+  UIMinimumScale: 0.016666668
+  MenuScaleFactor: 2.5
+  BoundaryBoxLineWidthFactor: 0.08
+  BoundingBoxColor: {r: 0, g: 1, b: 1, a: 1}
+  HighlightColor: {r: 1, g: 0, b: 0, a: 1}
+  SnappingTarget: 0
+  SnappingMode: 2
+  SnappingDistance: 0.05
+  HologramsParent: {fileID: 0}
+  ControllersParent: {fileID: 0}
+  EnableBaseDrawing: 1
+  BaseLinePrefab: {fileID: 1921519996680070, guid: 1fd188edea465b747a86288617abdbae,
+    type: 2}
+  EnablePivotDrawing: 0
+  PivotPrefab: {fileID: 1695930689128000, guid: 0d68d6cea19615d45a2267a02309c468,
+    type: 2}
+  EnableControllerMenu: 1
+  ControllerMenuPrefab: {fileID: 1839513779563576, guid: f027e617c74b96a43bbe62e06e23f768,
+    type: 2}
+  RegisterInHologramsList: 1
 --- !u!1 &858374915
 GameObject:
   m_ObjectHideFlags: 0
@@ -961,6 +1034,7 @@ GameObject:
   m_Component:
   - component: {fileID: 987081231}
   - component: {fileID: 987081230}
+  - component: {fileID: 987081232}
   m_Layer: 0
   m_Name: 'Hologram #1'
   m_TagString: Untagged
@@ -994,6 +1068,50 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &987081232
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 987081229}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4784de6befdb31469089fe1745516dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  RotateControllerPrefab: {fileID: 1963797349280120, guid: 1c365955a9455824ab3d00e726ed9f7c,
+    type: 2}
+  ScaleControllerPrefab: {fileID: 1768989509447430, guid: 943be141291e4fe49acfda0ecd1fb14e,
+    type: 2}
+  BoxLinePrefab: {fileID: 1346323259724296, guid: 068f05e8f76b7ae47886ddafbd2ec8e8,
+    type: 2}
+  ScaleFactor: 8
+  RotateFactor: 800
+  TranslateFactor: 2
+  MinObjectSize: {x: 0.2, y: 0.2, z: 0.2}
+  MaxObjectSize: {x: 3, y: 3, z: 3}
+  HologramMinimumSizeForUIScaling: 0.5
+  UIScalingFactor: 0.05
+  UIMinimumScale: 0.016666668
+  MenuScaleFactor: 2.5
+  BoundaryBoxLineWidthFactor: 0.08
+  BoundingBoxColor: {r: 1, g: 0.97241366, b: 0, a: 1}
+  HighlightColor: {r: 0, g: 1, b: 0.17241383, a: 1}
+  SnappingTarget: 0
+  SnappingMode: 2
+  SnappingDistance: 0.05
+  HologramsParent: {fileID: 0}
+  ControllersParent: {fileID: 0}
+  EnableBaseDrawing: 1
+  BaseLinePrefab: {fileID: 1921519996680070, guid: 1fd188edea465b747a86288617abdbae,
+    type: 2}
+  EnablePivotDrawing: 0
+  PivotPrefab: {fileID: 1695930689128000, guid: 0d68d6cea19615d45a2267a02309c468,
+    type: 2}
+  EnableControllerMenu: 1
+  ControllerMenuPrefab: {fileID: 1839513779563576, guid: f027e617c74b96a43bbe62e06e23f768,
+    type: 2}
+  RegisterInHologramsList: 1
 --- !u!1 &992320766
 GameObject:
   m_ObjectHideFlags: 0
